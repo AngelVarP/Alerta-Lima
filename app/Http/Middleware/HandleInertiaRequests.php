@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -43,8 +44,41 @@ class HandleInertiaRequests extends Middleware
                     'nombre' => $request->user()->nombre,
                     'apellido' => $request->user()->apellido,
                     'email' => $request->user()->email,
+                    'roles' => $this->getUserRoles($request->user()),
+                    'permissions' => $this->getUserPermissions($request->user()),
                 ] : null,
             ],
         ];
+    }
+
+    /**
+     * Obtener roles del usuario
+     */
+    private function getUserRoles($user): array
+    {
+        $roles = DB::table('rol_usuario')
+            ->join('roles', 'rol_usuario.rol_id', '=', 'roles.id')
+            ->where('rol_usuario.usuario_id', $user->id)
+            ->pluck('roles.nombre')
+            ->toArray();
+
+        return $roles;
+    }
+
+    /**
+     * Obtener permisos del usuario
+     */
+    private function getUserPermissions($user): array
+    {
+        // Obtener permisos a través de roles
+        $permissions = DB::table('rol_usuario')
+            ->join('rol_permiso', 'rol_usuario.rol_id', '=', 'rol_permiso.rol_id')
+            ->join('permisos', 'rol_permiso.permiso_id', '=', 'permisos.id')
+            ->where('rol_usuario.usuario_id', $user->id)
+            ->pluck('permisos.nombre')
+            ->unique()
+            ->toArray();
+
+        return $permissions;
     }
 }

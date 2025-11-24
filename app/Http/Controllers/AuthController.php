@@ -26,17 +26,23 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string', // Puede ser email o DNI
             'password' => 'required|string',
         ]);
 
-        // Buscar usuario por email
-        $usuario = Usuario::where('email', $credentials['email'])->first();
+        $loginField = $credentials['login'];
+        $password = $credentials['password'];
+
+        // Detectar si es email o DNI
+        $fieldType = filter_var($loginField, FILTER_VALIDATE_EMAIL) ? 'email' : 'dni';
+
+        // Buscar usuario por email o DNI
+        $usuario = Usuario::where($fieldType, $loginField)->first();
 
         // Verificar si existe y la contraseña es correcta
-        if (!$usuario || !Hash::check($credentials['password'], $usuario->password_hash)) {
+        if (!$usuario || !Hash::check($password, $usuario->password_hash)) {
             throw ValidationException::withMessages([
-                'email' => ['Las credenciales proporcionadas son incorrectas.'],
+                'login' => ['Las credenciales proporcionadas son incorrectas.'],
             ]);
         }
 
@@ -65,7 +71,17 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/dashboard');
+        // Redirigir según el rol del usuario
+        if ($usuario->tieneRol('admin')) {
+            return redirect()->intended('/admin');
+        } elseif ($usuario->tieneRol('supervisor')) {
+            return redirect()->intended('/supervisor');
+        } elseif ($usuario->tieneRol('funcionario')) {
+            return redirect()->intended('/funcionario');
+        } else {
+            // Ciudadano por defecto
+            return redirect()->intended('/dashboard');
+        }
     }
 
     /**
@@ -85,9 +101,14 @@ class AuthController extends Controller
             'nombre' => 'required|string|max:150',
             'apellido' => 'required|string|max:150',
             'email' => 'required|email|unique:usuarios,email',
-            'dni' => 'nullable|string|max:15',
+            'dni' => 'required|string|size:8|regex:/^[0-9]{8}$/|unique:usuarios,dni',
             'telefono' => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'dni.required' => 'El DNI es obligatorio.',
+            'dni.size' => 'El DNI debe tener exactamente 8 dígitos.',
+            'dni.regex' => 'El DNI debe contener solo números.',
+            'dni.unique' => 'Este DNI ya está registrado.',
         ]);
 
         // Crear usuario
@@ -95,7 +116,7 @@ class AuthController extends Controller
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
             'email' => $validated['email'],
-            'dni' => $validated['dni'] ?? null,
+            'dni' => $validated['dni'],
             'telefono' => $validated['telefono'] ?? null,
             'password_hash' => Hash::make($validated['password']),
             'activo' => true,

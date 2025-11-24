@@ -13,7 +13,23 @@ Route::post('/register', [AuthController::class, 'register']);
 
 // Rutas protegidas (requieren autenticación)
 Route::middleware('auth')->group(function () {
+    // Dashboard de Ciudadano (por defecto)
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
-    })->name('dashboard');
+    })->middleware('role:ciudadano')->name('dashboard');
+
+    // Dashboard de Funcionario
+    Route::get('/funcionario', function () {
+        return Inertia::render('Funcionario/Dashboard');
+    })->middleware('role:funcionario,supervisor,admin')->name('funcionario.dashboard');
+
+    // Dashboard de Supervisor
+    Route::get('/supervisor', function () {
+        return Inertia::render('Supervisor/Dashboard');
+    })->middleware('role:supervisor,admin')->name('supervisor.dashboard');
+
+    // Dashboard de Admin
+    Route::get('/admin', function () {
+        return Inertia::render('Admin/Dashboard');
+    })->middleware('role:admin')->name('admin.dashboard');
 });
