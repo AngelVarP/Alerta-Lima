@@ -2,7 +2,7 @@
 -- SISTEMA DE GESTIÓN DE DENUNCIAS CIUDADANAS (SGDC)
 -- Base de Datos: PostgreSQL 16
 -- Compatible con: Laravel 11 + Fortify + Spatie Permission
--- Versión: 2.0 (Con mejoras de integridad y trazabilidad)
+-- Versión: 2.0 (Estructura Limpia para uso con Seeders)
 -- =====================================================================
 
 -- =====================================================================
@@ -13,6 +13,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- Para cifrado adicional si es necesa
 -- =====================================================================
 -- 2. TIPOS ENUMERADOS (Para integridad de datos)
 -- =====================================================================
+
+-- Eliminamos tipos si existen para evitar errores al re-importar
+DROP TYPE IF EXISTS estado_notificacion CASCADE;
+DROP TYPE IF EXISTS canal_notificacion CASCADE;
+DROP TYPE IF EXISTS severidad_evento CASCADE;
+DROP TYPE IF EXISTS canal_2fa CASCADE;
 
 CREATE TYPE estado_notificacion AS ENUM ('PENDIENTE', 'ENVIADA', 'FALLIDA', 'LEIDA');
 CREATE TYPE canal_notificacion AS ENUM ('email', 'sms', 'web', 'push');
@@ -521,158 +527,14 @@ CREATE TABLE configuracion_sistema (
 );
 
 -- =====================================================================
--- 17. DATOS INICIALES
+-- 17. DATOS INICIALES (REMOVIDOS PARA USAR LARAVEL SEEDERS)
 -- =====================================================================
-
--- Áreas municipales
-INSERT INTO areas (nombre, codigo, descripcion) VALUES
-('Limpieza Pública', 'LIMP', 'Área encargada de la recolección de residuos y limpieza de calles'),
-('Alumbrado Público', 'ALUM', 'Área encargada del mantenimiento del alumbrado público'),
-('Seguridad Ciudadana', 'SEGU', 'Serenazgo y seguridad ciudadana'),
-('Obras Públicas', 'OBRA', 'Mantenimiento de pistas, veredas e infraestructura'),
-('Parques y Jardines', 'PARQ', 'Mantenimiento de áreas verdes'),
-('Fiscalización', 'FISC', 'Control de ruidos y fiscalización municipal'),
-('Atención al Ciudadano', 'ATEN', 'Mesa de partes y atención general');
-
--- Roles base
-INSERT INTO roles (nombre, guard_name, descripcion) VALUES
-('ciudadano', 'web', 'Usuario ciudadano que puede crear y dar seguimiento a denuncias'),
-('funcionario', 'web', 'Personal municipal que gestiona las denuncias'),
-('supervisor', 'web', 'Supervisor de área que puede reasignar y ver reportes'),
-('admin', 'web', 'Administrador del sistema con acceso total');
-
--- Permisos base
-INSERT INTO permisos (nombre, guard_name, descripcion) VALUES
--- Permisos de ciudadano
-('crear_denuncia', 'web', 'Puede crear nuevas denuncias'),
-('ver_mis_denuncias', 'web', 'Puede ver sus propias denuncias'),
-('agregar_comentario_publico', 'web', 'Puede agregar comentarios públicos'),
-('editar_mi_denuncia', 'web', 'Puede editar su denuncia si está en estado inicial'),
--- Permisos de funcionario
-('ver_denuncias_area', 'web', 'Puede ver denuncias de su área'),
-('atender_denuncia', 'web', 'Puede atender y cambiar estado de denuncias asignadas'),
-('agregar_comentario_interno', 'web', 'Puede agregar comentarios internos'),
--- Permisos de supervisor
-('ver_todas_denuncias', 'web', 'Puede ver todas las denuncias del sistema'),
-('asignar_denuncia', 'web', 'Puede asignar denuncias a funcionarios'),
-('reasignar_denuncia', 'web', 'Puede reasignar denuncias entre áreas'),
-('cambiar_prioridad', 'web', 'Puede cambiar la prioridad de una denuncia'),
-('ver_dashboard', 'web', 'Puede ver el tablero de control'),
-('ver_reportes', 'web', 'Puede ver reportes y estadísticas'),
--- Permisos de admin
-('gestionar_usuarios', 'web', 'Puede crear, editar y desactivar usuarios'),
-('gestionar_roles', 'web', 'Puede gestionar roles y permisos'),
-('gestionar_catalogos', 'web', 'Puede gestionar categorías, estados, prioridades'),
-('gestionar_areas', 'web', 'Puede gestionar áreas y responsables'),
-('ver_auditoria', 'web', 'Puede ver los logs de auditoría'),
-('ver_eventos_seguridad', 'web', 'Puede ver eventos de seguridad'),
-('configurar_sistema', 'web', 'Puede modificar configuración del sistema'),
-('eliminar_denuncia', 'web', 'Puede eliminar denuncias del sistema');
-
--- Asignar permisos a roles
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'ciudadano' AND p.nombre IN ('crear_denuncia', 'ver_mis_denuncias', 'agregar_comentario_publico', 'editar_mi_denuncia');
-
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'funcionario' AND p.nombre IN (
-    'ver_denuncias_area', 'atender_denuncia', 'agregar_comentario_interno', 'agregar_comentario_publico'
-);
-
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'supervisor' AND p.nombre IN (
-    'ver_todas_denuncias', 'asignar_denuncia', 'reasignar_denuncia', 'cambiar_prioridad',
-    'ver_dashboard', 'ver_reportes', 'ver_denuncias_area', 'atender_denuncia',
-    'agregar_comentario_interno', 'agregar_comentario_publico'
-);
-
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'admin';
-
--- Estados de denuncia
-INSERT INTO estados_denuncia (nombre, codigo, descripcion, color, es_inicial, es_final, orden) VALUES
-('REGISTRADA', 'REG', 'Denuncia recién registrada, pendiente de revisión', '#3B82F6', TRUE, FALSE, 1),
-('EN_REVISION', 'REV', 'Denuncia en proceso de revisión inicial', '#F59E0B', FALSE, FALSE, 2),
-('EN_PROCESO', 'PRO', 'Denuncia asignada y en proceso de atención', '#8B5CF6', FALSE, FALSE, 3),
-('ATENDIDA', 'ATE', 'Denuncia resuelta satisfactoriamente', '#10B981', FALSE, TRUE, 4),
-('RECHAZADA', 'REC', 'Denuncia rechazada por no cumplir requisitos', '#EF4444', FALSE, TRUE, 5),
-('ARCHIVADA', 'ARC', 'Denuncia archivada sin resolución', '#6B7280', FALSE, TRUE, 6);
-
--- Transiciones de estado válidas
-INSERT INTO transiciones_estado (estado_origen_id, estado_destino_id, nombre, requiere_motivo, requiere_asignacion) VALUES
--- Desde REGISTRADA
-((SELECT id FROM estados_denuncia WHERE codigo='REG'), (SELECT id FROM estados_denuncia WHERE codigo='REV'), 'Iniciar revisión', FALSE, FALSE),
-((SELECT id FROM estados_denuncia WHERE codigo='REG'), (SELECT id FROM estados_denuncia WHERE codigo='REC'), 'Rechazar', TRUE, FALSE),
--- Desde EN_REVISION
-((SELECT id FROM estados_denuncia WHERE codigo='REV'), (SELECT id FROM estados_denuncia WHERE codigo='PRO'), 'Asignar para atención', FALSE, TRUE),
-((SELECT id FROM estados_denuncia WHERE codigo='REV'), (SELECT id FROM estados_denuncia WHERE codigo='REC'), 'Rechazar', TRUE, FALSE),
-((SELECT id FROM estados_denuncia WHERE codigo='REV'), (SELECT id FROM estados_denuncia WHERE codigo='REG'), 'Devolver a registro', TRUE, FALSE),
--- Desde EN_PROCESO
-((SELECT id FROM estados_denuncia WHERE codigo='PRO'), (SELECT id FROM estados_denuncia WHERE codigo='ATE'), 'Marcar como atendida', TRUE, FALSE),
-((SELECT id FROM estados_denuncia WHERE codigo='PRO'), (SELECT id FROM estados_denuncia WHERE codigo='REV'), 'Devolver a revisión', TRUE, FALSE),
-((SELECT id FROM estados_denuncia WHERE codigo='PRO'), (SELECT id FROM estados_denuncia WHERE codigo='ARC'), 'Archivar', TRUE, FALSE);
-
--- Categorías de denuncia con área por defecto
-INSERT INTO categorias_denuncia (nombre, descripcion, icono, color, area_default_id, orden) VALUES
-('Basura', 'Acumulación de residuos sólidos en vía pública', 'trash', '#84CC16', (SELECT id FROM areas WHERE codigo='LIMP'), 1),
-('Alumbrado', 'Problemas con el alumbrado público', 'lightbulb', '#FBBF24', (SELECT id FROM areas WHERE codigo='ALUM'), 2),
-('Inseguridad', 'Situaciones de inseguridad ciudadana', 'shield-alert', '#EF4444', (SELECT id FROM areas WHERE codigo='SEGU'), 3),
-('Baches', 'Huecos o deterioro en pistas y veredas', 'construction', '#F97316', (SELECT id FROM areas WHERE codigo='OBRA'), 4),
-('Parques', 'Mantenimiento de áreas verdes y parques', 'trees', '#22C55E', (SELECT id FROM areas WHERE codigo='PARQ'), 5),
-('Ruido', 'Contaminación sonora excesiva', 'volume-x', '#A855F7', (SELECT id FROM areas WHERE codigo='FISC'), 6),
-('Otros', 'Otros problemas no categorizados', 'help-circle', '#6B7280', (SELECT id FROM areas WHERE codigo='ATEN'), 99);
-
--- Prioridades
-INSERT INTO prioridades_denuncia (nombre, codigo, descripcion, color, sla_horas, orden) VALUES
-('BAJA', 'LOW', 'Atención en horario regular', '#6B7280', 168, 1),
-('MEDIA', 'MED', 'Atención prioritaria', '#F59E0B', 72, 2),
-('ALTA', 'HIGH', 'Atención urgente', '#F97316', 24, 3),
-('CRITICA', 'CRIT', 'Atención inmediata', '#EF4444', 4, 4);
-
--- Distritos de Lima
-INSERT INTO distritos (nombre, codigo, provincia, departamento) VALUES
-('Lima Cercado', 'LIM01', 'Lima', 'Lima'),
-('Miraflores', 'LIM02', 'Lima', 'Lima'),
-('San Isidro', 'LIM03', 'Lima', 'Lima'),
-('Santiago de Surco', 'LIM04', 'Lima', 'Lima'),
-('La Molina', 'LIM05', 'Lima', 'Lima'),
-('San Borja', 'LIM06', 'Lima', 'Lima'),
-('Barranco', 'LIM07', 'Lima', 'Lima'),
-('Chorrillos', 'LIM08', 'Lima', 'Lima'),
-('San Juan de Lurigancho', 'LIM09', 'Lima', 'Lima'),
-('Ate', 'LIM10', 'Lima', 'Lima'),
-('San Juan de Miraflores', 'LIM11', 'Lima', 'Lima'),
-('Villa El Salvador', 'LIM12', 'Lima', 'Lima'),
-('Comas', 'LIM13', 'Lima', 'Lima'),
-('Los Olivos', 'LIM14', 'Lima', 'Lima'),
-('San Martín de Porres', 'LIM15', 'Lima', 'Lima');
-
--- Configuración inicial del sistema
-INSERT INTO configuracion_sistema (clave, valor, tipo, categoria, descripcion) VALUES
--- General
-('app_nombre', 'Alerta Lima - Sistema de Gestión de Denuncias Ciudadanas', 'string', 'general', 'Nombre de la aplicación'),
-('app_version', '2.0.0', 'string', 'general', 'Versión del sistema'),
-('municipalidad_nombre', 'Municipalidad Metropolitana de Lima', 'string', 'general', 'Nombre de la municipalidad'),
--- Seguridad
-('session_timeout_minutos', '30', 'integer', 'seguridad', 'Tiempo de inactividad para cerrar sesión'),
-('max_intentos_login', '5', 'integer', 'seguridad', 'Máximo de intentos de login antes de bloquear'),
-('bloqueo_minutos', '15', 'integer', 'seguridad', 'Minutos de bloqueo después de exceder intentos'),
-('2fa_obligatorio_funcionarios', 'true', 'boolean', 'seguridad', '2FA obligatorio para funcionarios'),
-('2fa_obligatorio_admin', 'true', 'boolean', 'seguridad', '2FA obligatorio para administradores'),
--- Archivos
-('max_tamano_adjunto_mb', '10', 'integer', 'archivos', 'Tamaño máximo de archivos adjuntos en MB'),
-('max_adjuntos_denuncia', '5', 'integer', 'archivos', 'Máximo de archivos por denuncia'),
-('tipos_adjunto_permitidos', '["image/jpeg","image/png","image/gif","application/pdf","video/mp4"]', 'json', 'archivos', 'Tipos MIME permitidos para adjuntos'),
--- Notificaciones
-('notif_email_habilitado', 'true', 'boolean', 'notificaciones', 'Habilitar notificaciones por email'),
-('notif_sms_habilitado', 'false', 'boolean', 'notificaciones', 'Habilitar notificaciones por SMS'),
-('notif_max_reintentos', '3', 'integer', 'notificaciones', 'Máximo de reintentos para notificaciones fallidas'),
--- SLA
-('sla_alerta_porcentaje', '75', 'integer', 'sla', 'Porcentaje de SLA para generar alerta'),
-('sla_escalamiento_habilitado', 'true', 'boolean', 'sla', 'Habilitar escalamiento automático por SLA vencido');
+-- Los datos de Áreas, Roles, Permisos, Estados, Categorías,
+-- Prioridades y Distritos se han trasladado a:
+-- 1. database/seeders/CatalogSeeder.php
+-- 2. database/seeders/RoleSeeder.php
+--
+-- Ejecutar: php artisan db:seed
 
 -- =====================================================================
 -- 18. FUNCIONES Y TRIGGERS
