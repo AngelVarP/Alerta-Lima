@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 const props = defineProps({
     auth: Object,
@@ -102,9 +103,14 @@ const stats = [
                 >
                     <span class="text-2xl">☰</span>
                 </button>
+                <div class="flex-1 flex items-center justify-between px-4 lg:hidden">
+                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">Admin</h1>
+                    <ThemeToggle />
+                </div>
                 <div class="flex-1 flex items-center justify-between px-6">
                     <h1 class="text-xl font-bold text-gray-900 dark:text-white">Panel de Administración</h1>
                     <div class="flex items-center gap-4">
+                        <ThemeToggle />
                         <button class="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                             <span class="text-2xl">🔔</span>
                             <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>

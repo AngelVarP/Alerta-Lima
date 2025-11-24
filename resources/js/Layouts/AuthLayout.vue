@@ -1,4 +1,6 @@
 <script setup>
+import ThemeToggle from '@/Components/ThemeToggle.vue';
+
 defineProps({
     title: String,
 });
@@ -80,6 +82,9 @@ defineProps({
 
         <!-- Right side - Form -->
         <div class="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
+            <div class="absolute top-4 right-4">
+                <ThemeToggle />
+            </div>
             <div class="w-full max-w-md animate-fade-in">
                 <!-- Logo mobile -->
                 <div class="lg:hidden text-center mb-8">

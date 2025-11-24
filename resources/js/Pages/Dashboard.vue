@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 const props = defineProps({
     auth: Object,
@@ -105,19 +106,25 @@ const menuItems = [
                 </button>
                 <div class="flex-1 flex items-center justify-between px-4">
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                    <ThemeToggle />
                 </div>
             </div>
 
             <!-- Page content -->
             <main class="p-6 lg:p-8">
                 <!-- Welcome Header -->
-                <div class="mb-8 animate-fade-in">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        ¡Bienvenido, {{ $page.props.auth.user.nombre }}! 👋
-                    </h1>
-                    <p class="text-gray-600 dark:text-gray-400">
-                        Aquí está el resumen de tus denuncias y actividad reciente
-                    </p>
+                <div class="mb-8 animate-fade-in flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                            ¡Bienvenido, {{ $page.props.auth.user.nombre }}! 👋
+                        </h1>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Aquí está el resumen de tus denuncias y actividad reciente
+                        </p>
+                    </div>
+                    <div class="hidden lg:block">
+                        <ThemeToggle />
+                    </div>
                 </div>
 
                 <!-- Stats Grid -->
