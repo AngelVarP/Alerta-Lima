@@ -2,229 +2,166 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Adjunto;
-use App\Models\Comentario;
 use App\Models\Denuncia;
-use App\Models\CategoriaDenuncia;
-use App\Models\Distrito;
 use App\Models\EstadoDenuncia;
-use App\Models\HistorialAsignacion;
-use App\Models\PrioridadDenuncia;
-use App\Models\RegistroAuditoria;
-use App\Models\Usuario;
+use App\Models\CategoriaDenuncia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class DenunciaController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
-        $usuario = $request->user();
-        $query = Denuncia::with(['estado', 'categoria', 'prioridad', 'distrito', 'asignadoA']);
+        // Obtener el usuario autenticado
+        $user = Auth::user();
 
-        // Filtrar según rol
-        if ($usuario->tieneRol('ciudadano') && !$usuario->esFuncionario()) {
-            $query->where('ciudadano_id', $usuario->id);
-        } elseif ($usuario->tieneRol('funcionario') && !$usuario->esAdmin()) {
-            $query->where('area_id', $usuario->area_id);
-        }
+        // Construir la consulta base
+        $query = Denuncia::where('ciudadano_id', $user->id)
+            ->with(['estado', 'categoria', 'prioridad', 'distrito']);
 
-        // Filtros opcionales
-        if ($request->filled('estado')) {
-            $query->where('estado_id', $request->estado);
-        }
-        if ($request->filled('categoria')) {
-            $query->where('categoria_id', $request->categoria);
-        }
-        if ($request->filled('prioridad')) {
-            $query->where('prioridad_id', $request->prioridad);
-        }
-        if ($request->filled('distrito')) {
-            $query->where('distrito_id', $request->distrito);
-        }
-        if ($request->filled('buscar')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('codigo', 'like', "%{$request->buscar}%")
-                  ->orWhere('titulo', 'like', "%{$request->buscar}%");
+        // Aplicar filtro de búsqueda si existe
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('codigo', 'like', "%{$search}%")
+                    ->orWhere('titulo', 'like', "%{$search}%")
+                    ->orWhere('descripcion', 'like', "%{$search}%");
             });
         }
 
-        $denuncias = $query->orderBy('registrada_en', 'desc')->paginate(15);
+        // Aplicar filtro de estado si existe
+        if ($request->filled('estado')) {
+            $query->whereHas('estado', function ($q) use ($request) {
+                $q->where('codigo', $request->input('estado'));
+            });
+        }
 
-        // Datos para filtros
-        $estados = EstadoDenuncia::ordenado()->get();
-        $categorias = CategoriaDenuncia::activas()->get();
-        $prioridades = PrioridadDenuncia::ordenado()->get();
-        $distritos = Distrito::activos()->get();
+        // Ordenar por fecha de creación (más recientes primero)
+        $query->orderBy('creado_en', 'desc');
 
-        return view('denuncias.index', compact(
-            'denuncias', 'estados', 'categorias', 'prioridades', 'distritos'
-        ));
+        // Paginar los resultados
+        $denuncias = $query->paginate(10)->withQueryString();
+
+        // Obtener todos los estados para el filtro
+        $estados = EstadoDenuncia::all(['id', 'nombre', 'codigo']);
+
+        return Inertia::render('Ciudadano/Denuncias/Index', [
+            'denuncias' => $denuncias,
+            'filtros' => [
+                'search' => $request->input('search', ''),
+                'estado' => $request->input('estado', ''),
+            ],
+            'estados' => $estados,
+        ]);
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
-        $categorias = CategoriaDenuncia::activas()->get();
-        $distritos = Distrito::activos()->get();
-        $prioridades = PrioridadDenuncia::ordenado()->get();
-
-        return view('denuncias.create', compact('categorias', 'distritos', 'prioridades'));
+        return Inertia::render('Ciudadano/Denuncias/Create', [
+            'categorias' => CategoriaDenuncia::activas()->get(['id', 'nombre', 'descripcion', 'icono']),
+            'distritos' => \App\Models\Distrito::orderBy('nombre')->get(['id', 'nombre']),
+        ]);
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
+        // Validar los datos del formulario
         $validated = $request->validate([
-            'titulo' => 'required|string|max:200',
-            'descripcion' => 'required|string',
+            'titulo' => 'required|string|max:255',
             'categoria_id' => 'required|exists:categorias_denuncia,id',
-            'distrito_id' => 'nullable|exists:distritos,id',
-            'direccion' => 'nullable|string|max:255',
-            'referencia' => 'nullable|string|max:255',
-            'latitud' => 'nullable|numeric|between:-90,90',
-            'longitud' => 'nullable|numeric|between:-180,180',
+            'descripcion' => 'required|string|min:20',
+            'direccion' => 'required|string|max:500',
+            'distrito_id' => 'required|exists:distritos,id',
+            'referencia' => 'nullable|string|max:500',
             'es_anonima' => 'boolean',
-            'adjuntos.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,pdf,mp4',
+            'adjuntos.*' => 'nullable|file|mimes:jpeg,jpg,png,mp4|max:10240', // 10MB max
         ]);
 
-        // Obtener estado inicial y prioridad por defecto
-        $estadoInicial = EstadoDenuncia::inicial();
-        $prioridadDefault = PrioridadDenuncia::where('codigo', 'MED')->first();
+        // Generar código único para la denuncia
+        $year = date('Y');
+        $lastDenuncia = Denuncia::whereYear('creado_en', $year)->orderBy('id', 'desc')->first();
+        $nextNumber = $lastDenuncia ? (intval(substr($lastDenuncia->codigo, -5)) + 1) : 1;
+        $codigo = 'DEN-' . $year . '-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
 
+        // Obtener el estado inicial "Registrada"
+        $estadoRegistrada = EstadoDenuncia::where('codigo', 'REG')->first();
+
+        // Obtener la prioridad por defecto (Media)
+        $prioridadMedia = \App\Models\PrioridadDenuncia::where('codigo', 'MED')->first();
+
+        // Crear la denuncia
         $denuncia = Denuncia::create([
-            'ciudadano_id' => $request->user()->id,
+            'codigo' => $codigo,
+            'ciudadano_id' => Auth::id(),
             'categoria_id' => $validated['categoria_id'],
-            'estado_id' => $estadoInicial->id,
-            'prioridad_id' => $request->prioridad_id ?? $prioridadDefault->id,
-            'distrito_id' => $validated['distrito_id'] ?? null,
+            'estado_id' => $estadoRegistrada->id,
+            'prioridad_id' => $prioridadMedia ? $prioridadMedia->id : null,
+            'distrito_id' => $validated['distrito_id'],
             'titulo' => $validated['titulo'],
             'descripcion' => $validated['descripcion'],
-            'direccion' => $validated['direccion'] ?? null,
+            'direccion' => $validated['direccion'],
             'referencia' => $validated['referencia'] ?? null,
-            'latitud' => $validated['latitud'] ?? null,
-            'longitud' => $validated['longitud'] ?? null,
-            'es_anonima' => $validated['es_anonima'] ?? false,
+            'es_anonima' => $request->boolean('es_anonima', false),
             'ip_origen' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
 
-        // Guardar adjuntos
+        // Procesar archivos adjuntos si existen
         if ($request->hasFile('adjuntos')) {
-            foreach ($request->file('adjuntos') as $archivo) {
-                $ruta = $archivo->store('adjuntos/' . $denuncia->id, 'local');
+            foreach ($request->file('adjuntos') as $file) {
+                // Guardar archivo en storage/app/public/denuncias
+                $path = $file->store('denuncias/' . $denuncia->id, 'public');
 
-                Adjunto::create([
+                // Crear registro en la tabla adjuntos_denuncia
+                \App\Models\AdjuntoDenuncia::create([
                     'denuncia_id' => $denuncia->id,
-                    'subido_por_id' => $request->user()->id,
-                    'nombre_original' => $archivo->getClientOriginalName(),
-                    'nombre_almacenado' => basename($ruta),
-                    'ruta_almacenamiento' => $ruta,
-                    'tipo_mime' => $archivo->getMimeType(),
-                    'tamano_bytes' => $archivo->getSize(),
-                    'hash_archivo' => hash_file('sha256', $archivo->path()),
+                    'nombre_archivo' => $file->getClientOriginalName(),
+                    'ruta_archivo' => $path,
+                    'tipo_mime' => $file->getMimeType(),
+                    'tamano' => $file->getSize(),
                 ]);
             }
         }
 
-        // Registrar auditoría
-        RegistroAuditoria::registrar(
-            'CREAR_DENUNCIA',
-            $request->user(),
-            'Denuncia',
-            $denuncia->id,
-            null,
-            $denuncia->toArray()
-        );
-
-        return redirect()->route('denuncias.show', $denuncia)
-            ->with('success', "Denuncia registrada exitosamente. Código: {$denuncia->codigo}");
+        return redirect()->route('denuncias.index')
+            ->with('success', '¡Denuncia registrada exitosamente! Código: ' . $codigo);
     }
 
+    /**
+     * Display the specified resource.
+     */
     public function show(Denuncia $denuncia)
     {
-        $this->authorize('ver', $denuncia);
-
-        $denuncia->load([
-            'ciudadano', 'asignadoA', 'area', 'categoria',
-            'prioridad', 'estado', 'distrito', 'adjuntos',
-            'comentarios' => fn($q) => $q->with('usuario')->orderBy('creado_en', 'desc'),
-            'historialEstados' => fn($q) => $q->with(['estadoAnterior', 'estadoNuevo', 'cambiadoPor'])->orderBy('creado_en', 'desc'),
-        ]);
-
-        // Transiciones disponibles
-        $transicionesDisponibles = $denuncia->estado->transicionesOrigen()
-            ->where('activo', true)
-            ->with('estadoDestino')
-            ->get();
-
-        return view('denuncias.show', compact('denuncia', 'transicionesDisponibles'));
-    }
-
-    public function cambiarEstado(Request $request, Denuncia $denuncia)
-    {
-        $this->authorize('cambiarEstado', $denuncia);
-
-        $validated = $request->validate([
-            'estado_id' => 'required|exists:estados_denuncia,id',
-            'motivo' => 'nullable|string|max:500',
-        ]);
-
-        $nuevoEstado = EstadoDenuncia::findOrFail($validated['estado_id']);
-
-        // Verificar transición válida
-        if (!$denuncia->estado->puedeTransicionarA($nuevoEstado)) {
-            return back()->with('error', 'Transición de estado no permitida.');
+        // Verificar que la denuncia pertenece al usuario actual
+        if ($denuncia->ciudadano_id !== Auth::id()) {
+            abort(403, 'No tienes permiso para ver esta denuncia.');
         }
 
-        $denuncia->cambiarEstado($nuevoEstado, $request->user(), $validated['motivo'] ?? null);
-
-        return back()->with('success', 'Estado actualizado correctamente.');
-    }
-
-    public function asignar(Request $request, Denuncia $denuncia)
-    {
-        $this->authorize('asignar', $denuncia);
-
-        $validated = $request->validate([
-            'asignado_a_id' => 'required|exists:usuarios,id',
-            'motivo' => 'nullable|string|max:500',
+        // Cargar relaciones necesarias
+        $denuncia->load([
+            'estado',
+            'categoria',
+            'prioridad',
+            'distrito',
+            'adjuntos',
+            'comentarios.usuario',
+            'historialEstados.estadoAnterior',
+            'historialEstados.estadoNuevo',
+            'historialEstados.cambiadoPor'
         ]);
 
-        $usuarioAnterior = $denuncia->asignadoA;
-        $nuevoUsuario = Usuario::findOrFail($validated['asignado_a_id']);
-
-        // Registrar historial
-        HistorialAsignacion::create([
-            'denuncia_id' => $denuncia->id,
-            'asignado_de_id' => $usuarioAnterior?->id,
-            'asignado_a_id' => $nuevoUsuario->id,
-            'area_anterior_id' => $denuncia->area_id,
-            'area_nueva_id' => $nuevoUsuario->area_id,
-            'asignado_por_id' => $request->user()->id,
-            'motivo' => $validated['motivo'] ?? null,
+        return Inertia::render('Ciudadano/Denuncias/Show', [
+            'denuncia' => $denuncia,
         ]);
-
-        $denuncia->update([
-            'asignado_a_id' => $nuevoUsuario->id,
-            'area_id' => $nuevoUsuario->area_id,
-        ]);
-
-        return back()->with('success', 'Denuncia asignada correctamente.');
-    }
-
-    public function agregarComentario(Request $request, Denuncia $denuncia)
-    {
-        $validated = $request->validate([
-            'comentario' => 'required|string',
-            'es_interno' => 'boolean',
-        ]);
-
-        Comentario::create([
-            'denuncia_id' => $denuncia->id,
-            'usuario_id' => $request->user()->id,
-            'comentario' => $validated['comentario'],
-            'es_interno' => $validated['es_interno'] ?? false,
-        ]);
-
-        return back()->with('success', 'Comentario agregado.');
     }
 }

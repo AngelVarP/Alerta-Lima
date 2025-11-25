@@ -15,7 +15,7 @@ const logout = () => {
 
 const menuItems = [
     { name: 'Dashboard', icon: '📊', href: '/dashboard', current: true },
-    { name: 'Mis Denuncias', icon: '📝', href: '#', current: false },
+    { name: 'Mis Denuncias', icon: '📝', href: '/mis-denuncias', current: false },
     { name: 'Nueva Denuncia', icon: '➕', href: '#', current: false },
     { name: 'Notificaciones', icon: '🔔', href: '#', current: false },
 ];
