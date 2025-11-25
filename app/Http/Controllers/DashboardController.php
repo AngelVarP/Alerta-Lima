@@ -34,6 +34,30 @@ class DashboardController extends Controller
         ));
     }
 
+    public function ciudadano(Request $request)
+    {
+        $usuario = $request->user();
+        $estadisticas = $this->obtenerEstadisticas($usuario);
+
+        // Obtener conteo de notificaciones no leídas
+        $notificacionesNoLeidas = \App\Models\Notificacion::where('usuario_id', $usuario->id)
+            ->noLeidas()
+            ->count();
+
+        // Obtener denuncias recientes
+        $denunciasRecientes = $this->obtenerDenunciasRecientes($usuario);
+
+        return \Inertia\Inertia::render('Ciudadano/Dashboard', [
+            'stats' => [
+                'total' => $estadisticas['total'],
+                'resueltas' => $estadisticas['cerradas'], // Asumiendo que 'cerradas' equivale a 'resueltas' o 'atendidas'
+                'en_proceso' => $estadisticas['abiertas'], // Asumiendo que 'abiertas' equivale a 'en proceso'
+                'notificaciones' => $notificacionesNoLeidas,
+            ],
+            'activities' => $denunciasRecientes
+        ]);
+    }
+
     private function obtenerEstadisticas($usuario): array
     {
         $query = Denuncia::query();
@@ -53,22 +77,26 @@ class DashboardController extends Controller
         $slaVencido = (clone $query)->slaPendiente()->count();
 
         // Estadísticas por estado
-        $porEstado = EstadoDenuncia::withCount(['denuncias' => function ($q) use ($usuario) {
-            if ($usuario->tieneRol('ciudadano') && !$usuario->esFuncionario()) {
-                $q->where('ciudadano_id', $usuario->id);
-            } elseif ($usuario->tieneRol('funcionario') && !$usuario->esAdmin()) {
-                $q->where('area_id', $usuario->area_id);
+        $porEstado = EstadoDenuncia::withCount([
+            'denuncias' => function ($q) use ($usuario) {
+                if ($usuario->tieneRol('ciudadano') && !$usuario->esFuncionario()) {
+                    $q->where('ciudadano_id', $usuario->id);
+                } elseif ($usuario->tieneRol('funcionario') && !$usuario->esAdmin()) {
+                    $q->where('area_id', $usuario->area_id);
+                }
             }
-        }])->ordenado()->get();
+        ])->ordenado()->get();
 
         // Estadísticas por categoría
-        $porCategoria = CategoriaDenuncia::withCount(['denuncias' => function ($q) use ($usuario) {
-            if ($usuario->tieneRol('ciudadano') && !$usuario->esFuncionario()) {
-                $q->where('ciudadano_id', $usuario->id);
-            } elseif ($usuario->tieneRol('funcionario') && !$usuario->esAdmin()) {
-                $q->where('area_id', $usuario->area_id);
+        $porCategoria = CategoriaDenuncia::withCount([
+            'denuncias' => function ($q) use ($usuario) {
+                if ($usuario->tieneRol('ciudadano') && !$usuario->esFuncionario()) {
+                    $q->where('ciudadano_id', $usuario->id);
+                } elseif ($usuario->tieneRol('funcionario') && !$usuario->esAdmin()) {
+                    $q->where('area_id', $usuario->area_id);
+                }
             }
-        }])->activas()->get();
+        ])->activas()->get();
 
         return [
             'total' => $total,

@@ -21,9 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:ciudadano')->group(function () {
 
         // Dashboard del Ciudadano
-        Route::get('/dashboard', function () {
-            return Inertia::render('Ciudadano/Dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'ciudadano'])->name('dashboard');
 
         // Mis Denuncias (Usando tu DenunciaController)
         Route::get('/mis-denuncias', [DenunciaController::class, 'index'])
@@ -40,6 +38,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/notificaciones/marcar-todas-leidas', [NotificacionController::class, 'markAllAsRead'])->name('notificaciones.markAllAsRead');
         Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy'])->name('notificaciones.destroy');
         Route::get('/notificaciones/no-leidas/count', [NotificacionController::class, 'unreadCount'])->name('notificaciones.unreadCount');
+
+        // Perfil
+        Route::get('/perfil', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/perfil', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/perfil/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
     });
 
     // --- RUTAS ADMINISTRATIVAS ---
