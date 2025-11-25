@@ -44,7 +44,7 @@ class Notificacion extends Model
     // Relaciones
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'usuario_id');
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 
     public function denuncia()
@@ -63,6 +63,16 @@ class Notificacion extends Model
         return $query->whereNull('leida_en');
     }
 
+    public function scopeLeidas($query)
+    {
+        return $query->whereNotNull('leida_en');
+    }
+
+    public function scopePorTipo($query, $tipo)
+    {
+        return $query->where('tipo', $tipo);
+    }
+
     // Helpers
     public function marcarComoLeida(): void
     {
@@ -78,5 +88,27 @@ class Notificacion extends Model
             'estado' => 'ENVIADA',
             'enviada_en' => now(),
         ]);
+    }
+
+    // Método estático para crear notificaciones fácilmente
+    public static function crearNotificacion($usuarioId, $tipo, $asunto, $mensaje, $denunciaId = null)
+    {
+        return self::create([
+            'usuario_id' => $usuarioId,
+            'denuncia_id' => $denunciaId,
+            'tipo' => $tipo,
+            'canal' => 'WEB',
+            'asunto' => $asunto,
+            'mensaje' => $mensaje,
+            'estado' => 'PENDIENTE',
+            'intentos' => 0,
+            'max_intentos' => 3,
+        ]);
+    }
+
+    // Accessor para obtener el título (usa asunto)
+    public function getTituloAttribute()
+    {
+        return $this->asunto;
     }
 }

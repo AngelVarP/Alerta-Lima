@@ -48,6 +48,9 @@ class HandleInertiaRequests extends Middleware
                     'permissions' => $this->getUserPermissions($request->user()),
                 ] : null,
             ],
+            'noLeidasCount' => $request->user()
+                ? \App\Models\Notificacion::where('usuario_id', $request->user()->id)->noLeidas()->count()
+                : 0,
         ];
     }
 

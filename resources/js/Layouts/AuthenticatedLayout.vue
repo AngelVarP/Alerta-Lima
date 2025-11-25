@@ -5,6 +5,9 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 const page = usePage();
 
+// Obtener contador de notificaciones no leídas desde props compartidas
+const noLeidasCount = computed(() => page.props.noLeidasCount || 0);
+
 // Función para verificar si una ruta está activa
 const isCurrentRoute = (href) => {
     const currentUrl = page.url;
@@ -12,6 +15,7 @@ const isCurrentRoute = (href) => {
     if (href === '/dashboard') return currentUrl === '/dashboard';
     if (href === '/mis-denuncias') return currentUrl === '/mis-denuncias' || currentUrl.startsWith('/denuncias/');
     if (href === '/denuncias/nueva') return currentUrl === '/denuncias/nueva';
+    if (href === '/notificaciones') return currentUrl === '/notificaciones';
     
     return currentUrl === href;
 };
@@ -21,7 +25,7 @@ const menuItems = computed(() => [
     { name: 'Dashboard', icon: '📊', href: '/dashboard', current: isCurrentRoute('/dashboard') },
     { name: 'Mis Denuncias', icon: '📝', href: '/mis-denuncias', current: isCurrentRoute('/mis-denuncias') },
     { name: 'Nueva Denuncia', icon: '➕', href: '/denuncias/nueva', current: isCurrentRoute('/denuncias/nueva') },
-    { name: 'Notificaciones', icon: '🔔', href: '#', current: false },
+    { name: 'Notificaciones', icon: '🔔', href: '/notificaciones', current: isCurrentRoute('/notificaciones'), badge: noLeidasCount.value },
 ]);
 
 const sidebarOpen = ref(false);
@@ -60,11 +64,19 @@ const logout = () => {
                             item.current
                                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50',
-                            'group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200'
+                            'group flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200'
                         ]"
                     >
-                        <span class="text-2xl mr-3">{{ item.icon }}</span>
-                        {{ item.name }}
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">{{ item.icon }}</span>
+                            {{ item.name }}
+                        </div>
+                        <span
+                            v-if="item.badge && item.badge > 0"
+                            class="px-2.5 py-1 text-xs font-bold bg-red-500 text-white rounded-full"
+                        >
+                            {{ item.badge }}
+                        </span>
                     </Link>
                 </nav>
 
@@ -109,11 +121,19 @@ const logout = () => {
                             item.current
                                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50',
-                            'group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200'
+                            'group flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200'
                         ]"
                     >
-                        <span class="text-2xl mr-3">{{ item.icon }}</span>
-                        {{ item.name }}
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">{{ item.icon }}</span>
+                            {{ item.name }}
+                        </div>
+                        <span
+                            v-if="item.badge && item.badge > 0"
+                            class="px-2.5 py-1 text-xs font-bold bg-red-500 text-white rounded-full"
+                        >
+                            {{ item.badge }}
+                        </span>
                     </Link>
                 </nav>
             </div>
@@ -135,10 +155,12 @@ const logout = () => {
                     </slot>
                     <div class="flex items-center gap-4">
                         <ThemeToggle />
-                        <button class="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        <Link href="/notificaciones" class="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                             <span class="text-2xl">🔔</span>
-                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                        </button>
+                            <span v-if="noLeidasCount > 0" class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                {{ noLeidasCount }}
+                            </span>
+                        </Link>
                     </div>
                 </div>
             </div>

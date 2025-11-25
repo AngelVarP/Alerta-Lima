@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DenunciaController; // <--- Importamos tu controlador
+use App\Http\Controllers\NotificacionController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/denuncias/nueva', [DenunciaController::class, 'create'])->name('denuncias.create');
         Route::post('/denuncias', [DenunciaController::class, 'store'])->name('denuncias.store');
         Route::get('/denuncias/{denuncia}', [DenunciaController::class, 'show'])->name('denuncias.show');
+
+        // Notificaciones
+        Route::get('/notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
+        Route::post('/notificaciones/{id}/marcar-leida', [NotificacionController::class, 'markAsRead'])->name('notificaciones.markAsRead');
+        Route::post('/notificaciones/marcar-todas-leidas', [NotificacionController::class, 'markAllAsRead'])->name('notificaciones.markAllAsRead');
+        Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy'])->name('notificaciones.destroy');
+        Route::get('/notificaciones/no-leidas/count', [NotificacionController::class, 'unreadCount'])->name('notificaciones.unreadCount');
     });
 
     // --- RUTAS ADMINISTRATIVAS ---
