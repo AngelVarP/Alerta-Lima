@@ -5,8 +5,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { route } from '../../../../vendor/tightenco/ziggy';
-import { Ziggy } from '../../ziggy';
+import { route } from '../../../../../vendor/tightenco/ziggy';
+import { Ziggy } from '../../../ziggy';
 
 const user = usePage().props.auth.user;
 
