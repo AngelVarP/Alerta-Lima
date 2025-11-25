@@ -19,6 +19,12 @@ class DenunciaController extends Controller
         // Obtener el usuario autenticado
         $user = Auth::user();
 
+        // DEBUG: Log para verificar
+        \Log::info('Usuario viendo denuncias:', [
+            'user_id' => $user->id,
+            'user_nombre' => $user->nombre,
+        ]);
+
         // Construir la consulta base
         $query = Denuncia::where('ciudadano_id', $user->id)
             ->with(['estado', 'categoria', 'prioridad', 'distrito']);
@@ -45,6 +51,12 @@ class DenunciaController extends Controller
 
         // Paginar los resultados
         $denuncias = $query->paginate(10)->withQueryString();
+
+        // DEBUG: Log para verificar resultados
+        \Log::info('Denuncias encontradas:', [
+            'total' => $denuncias->total(),
+            'count' => $denuncias->count(),
+        ]);
 
         // Obtener todos los estados para el filtro
         $estados = EstadoDenuncia::all(['id', 'nombre', 'codigo']);
@@ -147,15 +159,13 @@ class DenunciaController extends Controller
             abort(403, 'No tienes permiso para ver esta denuncia.');
         }
 
-        // Cargar relaciones necesarias
+        // Cargar todas las relaciones necesarias
         $denuncia->load([
-            'estado',
             'categoria',
-            'prioridad',
+            'estado',
             'distrito',
+            'prioridad',
             'adjuntos',
-            'comentarios.usuario',
-            'historialEstados.estadoAnterior',
             'historialEstados.estadoNuevo',
             'historialEstados.cambiadoPor'
         ]);

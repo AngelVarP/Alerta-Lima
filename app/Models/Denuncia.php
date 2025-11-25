@@ -88,7 +88,7 @@ class Denuncia extends Model
 
     public function adjuntos()
     {
-        return $this->hasMany(Adjunto::class, 'denuncia_id');
+        return $this->hasMany(AdjuntoDenuncia::class, 'denuncia_id');
     }
 
     public function comentarios()
