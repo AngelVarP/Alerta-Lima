@@ -1,8 +1,16 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DenunciaController; // <--- Importamos tu controlador
+use App\Http\Controllers\DenunciaController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\SupervisorController;
+use App\Http\Controllers\ComentarioController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UsuarioController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 
@@ -19,15 +27,11 @@ Route::middleware('auth')->group(function () {
 
     // --- RUTAS DEL CIUDADANO ---
     Route::middleware('role:ciudadano')->group(function () {
-
         // Dashboard del Ciudadano
-        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'ciudadano'])->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'ciudadano'])->name('dashboard');
 
-        // Mis Denuncias (Usando tu DenunciaController)
-        Route::get('/mis-denuncias', [DenunciaController::class, 'index'])
-            ->name('denuncias.index');
-
-        // Aquí agregarías las rutas para crear y ver detalle:
+        // Mis Denuncias
+        Route::get('/mis-denuncias', [DenunciaController::class, 'index'])->name('denuncias.index');
         Route::get('/denuncias/nueva', [DenunciaController::class, 'create'])->name('denuncias.create');
         Route::post('/denuncias', [DenunciaController::class, 'store'])->name('denuncias.store');
         Route::get('/denuncias/{denuncia}', [DenunciaController::class, 'show'])->name('denuncias.show');
@@ -40,24 +44,76 @@ Route::middleware('auth')->group(function () {
         Route::get('/notificaciones/no-leidas/count', [NotificacionController::class, 'unreadCount'])->name('notificaciones.unreadCount');
 
         // Perfil
-        Route::get('/perfil', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('/perfil', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-        Route::put('/perfil/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
+        Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/perfil/password', [ProfileController::class, 'updatePassword'])->name('password.update');
     });
 
-    // --- RUTAS ADMINISTRATIVAS ---
-    // Dashboard de Funcionario
-    Route::get('/funcionario', function () {
-        return Inertia::render('Funcionario/Dashboard');
-    })->middleware('role:funcionario,supervisor,admin')->name('funcionario.dashboard');
+    // --- RUTAS DEL FUNCIONARIO ---
+    Route::middleware('role:funcionario,supervisor,admin')->prefix('funcionario')->name('funcionario.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [FuncionarioController::class, 'dashboard'])->name('dashboard');
 
-    // Dashboard de Supervisor
-    Route::get('/supervisor', function () {
-        return Inertia::render('Supervisor/Dashboard');
-    })->middleware('role:supervisor,admin')->name('supervisor.dashboard');
+        // Gestión de denuncias
+        Route::get('/denuncias', [FuncionarioController::class, 'index'])->name('denuncias.index');
+        Route::get('/denuncias/{denuncia}', [FuncionarioController::class, 'show'])->name('denuncias.show');
 
-    // Dashboard de Admin
-    Route::get('/admin', function () {
-        return Inertia::render('Admin/Dashboard');
-    })->middleware('role:admin')->name('admin.dashboard');
+        // Acciones sobre denuncias
+        Route::post('/denuncias/{denuncia}/cambiar-estado', [FuncionarioController::class, 'cambiarEstado'])->name('denuncias.cambiar-estado');
+        Route::post('/denuncias/{denuncia}/tomar-asignacion', [FuncionarioController::class, 'tomarAsignacion'])->name('denuncias.tomar-asignacion');
+        Route::post('/denuncias/{denuncia}/comentar', [FuncionarioController::class, 'agregarComentario'])->name('denuncias.comentar');
+    });
+
+    // --- RUTAS DEL SUPERVISOR ---
+    Route::middleware('role:supervisor,admin')->prefix('supervisor')->name('supervisor.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [SupervisorController::class, 'dashboard'])->name('dashboard');
+
+        // Gestión de denuncias
+        Route::get('/denuncias', [SupervisorController::class, 'index'])->name('denuncias.index');
+        Route::get('/denuncias/{denuncia}', [SupervisorController::class, 'show'])->name('denuncias.show');
+
+        // Asignación y reasignación
+        Route::post('/denuncias/{denuncia}/asignar', [SupervisorController::class, 'asignar'])->name('denuncias.asignar');
+        Route::post('/denuncias/{denuncia}/reasignar', [SupervisorController::class, 'reasignar'])->name('denuncias.reasignar');
+        Route::post('/denuncias/{denuncia}/cambiar-prioridad', [SupervisorController::class, 'cambiarPrioridad'])->name('denuncias.cambiar-prioridad');
+
+        // Reportes
+        Route::get('/reportes', [SupervisorController::class, 'reportes'])->name('reportes');
+    });
+
+    // --- RUTAS DEL ADMIN ---
+    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', function () {
+            return Inertia::render('Admin/Dashboard');
+        })->name('dashboard');
+
+        // Gestión de usuarios
+        Route::resource('usuarios', UsuarioController::class);
+        Route::post('/usuarios/{usuario}/toggle-activo', [UsuarioController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
+
+        // Auditoría
+        Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+        Route::get('/auditoria/{registro}', [AuditoriaController::class, 'show'])->name('auditoria.show');
+        Route::get('/auditoria/estadisticas', [AuditoriaController::class, 'estadisticas'])->name('auditoria.estadisticas');
+
+        // Seguridad
+        Route::get('/seguridad', [AuditoriaController::class, 'eventosSeguridad'])->name('seguridad.index');
+        Route::get('/seguridad/{evento}', [AuditoriaController::class, 'showEventoSeguridad'])->name('seguridad.show');
+
+        // Reportes
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        Route::get('/reportes/exportar-csv', [ReporteController::class, 'exportarCSV'])->name('reportes.exportar-csv');
+        Route::get('/reportes/exportar-pdf', [ReporteController::class, 'exportarPDF'])->name('reportes.exportar-pdf');
+        Route::get('/reportes/rendimiento-funcionarios', [ReporteController::class, 'rendimientoFuncionarios'])->name('reportes.rendimiento-funcionarios');
+        Route::get('/reportes/sla', [ReporteController::class, 'reporteSLA'])->name('reportes.sla');
+    });
+
+    // --- RUTAS COMPARTIDAS (COMENTARIOS) ---
+    Route::middleware('auth')->group(function () {
+        Route::post('/denuncias/{denuncia}/comentarios', [ComentarioController::class, 'store'])->name('comentarios.store');
+        Route::put('/comentarios/{comentario}', [ComentarioController::class, 'update'])->name('comentarios.update');
+        Route::delete('/comentarios/{comentario}', [ComentarioController::class, 'destroy'])->name('comentarios.destroy');
+    });
 });

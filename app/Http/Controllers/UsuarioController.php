@@ -9,6 +9,7 @@ use App\Models\RegistroAuditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class UsuarioController extends Controller
 {
@@ -41,7 +42,12 @@ class UsuarioController extends Controller
         $roles = Rol::all();
         $areas = Area::activas()->get();
 
-        return view('usuarios.index', compact('usuarios', 'roles', 'areas'));
+        return Inertia::render('Admin/Usuarios/Index', [
+            'usuarios' => $usuarios,
+            'roles' => $roles,
+            'areas' => $areas,
+            'filtros' => $request->only(['buscar', 'rol', 'area', 'activo']),
+        ]);
     }
 
     public function create()
@@ -49,7 +55,10 @@ class UsuarioController extends Controller
         $roles = Rol::all();
         $areas = Area::activas()->get();
 
-        return view('usuarios.create', compact('roles', 'areas'));
+        return Inertia::render('Admin/Usuarios/Create', [
+            'roles' => $roles,
+            'areas' => $areas,
+        ]);
     }
 
     public function store(Request $request)
@@ -100,7 +109,11 @@ class UsuarioController extends Controller
         $areas = Area::activas()->get();
         $usuario->load('roles');
 
-        return view('usuarios.edit', compact('usuario', 'roles', 'areas'));
+        return Inertia::render('Admin/Usuarios/Edit', [
+            'usuario' => $usuario,
+            'roles' => $roles,
+            'areas' => $areas,
+        ]);
     }
 
     public function update(Request $request, Usuario $usuario)
