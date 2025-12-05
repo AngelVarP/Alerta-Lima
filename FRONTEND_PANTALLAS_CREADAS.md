@@ -1,6 +1,6 @@
 # 🎨 Pantallas Frontend Creadas - Alerta Lima
 
-## ✅ **RESUMEN: 7 Pantallas Implementadas**
+## ✅ **RESUMEN: 16 Pantallas Implementadas**
 
 ---
 
@@ -160,12 +160,66 @@
 
 ---
 
-### 5-7. **Denuncias Index, Show y Reportes del Supervisor**
-**Estado:** Similar al funcionario pero con capacidades adicionales de:
-- Asignación a otros funcionarios
-- Reasignación de denuncias
-- Cambio de prioridad
-- Vista de reportes y métricas
+### 5. **Lista de Denuncias Supervisor** ✅
+**Ruta:** `resources/js/Pages/Supervisor/Denuncias/Index.vue`
+**Endpoint:** `GET /supervisor/denuncias`
+
+**Características:**
+- 🔍 3 Filtros principales:
+  1. Búsqueda por texto (código/título/ciudadano)
+  2. Estado
+  3. Asignado a (sin asignar, funcionarios del área)
+- 🏷️ Badge destacado "Sin asignar" en naranja
+- 📄 Lista paginada (20 registros por página)
+- 🎨 Tema purple en toda la interfaz
+- 🔄 Filtrado en tiempo real (debounce 300ms)
+
+**Props requeridos:**
+```javascript
+{
+  denuncias: Object (paginado),
+  filtros: Object,
+  estados: Array,
+  funcionarios: Array
+}
+```
+
+---
+
+### 6. **Detalle de Denuncia Supervisor** ✅
+**Ruta:** `resources/js/Pages/Supervisor/Denuncias/Show.vue`
+**Endpoint:** `GET /supervisor/denuncias/{id}`
+
+**Características:**
+- 📋 **Header con acciones (3 modales):**
+  - Botón "Asignar" (si no está asignada)
+  - Botón "Reasignar" (si ya está asignada)
+  - Botón "Cambiar Prioridad"
+
+- 🎭 **3 Modales:**
+  1. **Modal Asignar:**
+     - Select de funcionario del área
+     - Textarea motivo (opcional)
+  2. **Modal Reasignar:**
+     - Select de nuevo funcionario
+     - Textarea motivo (REQUERIDO)
+  3. **Modal Cambiar Prioridad:**
+     - Select de nueva prioridad
+     - Textarea motivo (opcional)
+
+- 📄 **Contenido (similar a funcionario + extras):**
+  - **Sidebar adicional:**
+    - Historial de Asignaciones (tabla con fechas, funcionarios y motivos)
+
+**Props requeridos:**
+```javascript
+{
+  denuncia: Object (con todas las relaciones + historial_asignaciones),
+  estadosDisponibles: Array,
+  funcionariosArea: Array,
+  prioridades: Array
+}
+```
 
 ---
 
@@ -237,42 +291,286 @@ npm run dev
 
 ---
 
-## 📝 **PRÓXIMOS PASOS**
+## 👨‍💼 **ADMIN - 7 Pantallas Completas**
 
-### **Pendientes de crear:**
-1. ❌ `Supervisor/Denuncias/Index.vue` - Lista con filtros de supervisión
-2. ❌ `Supervisor/Denuncias/Show.vue` - Detalle con asignación/reasignación
-3. ❌ `Supervisor/Reportes.vue` - Reportes y métricas del área
+### 7. **AdminLayout** ✅
+**Ruta:** `resources/js/Layouts/AdminLayout.vue`
 
-### **Pantallas Admin (Fase 3):**
-4. ❌ `Admin/Usuarios/Index.vue`
-5. ❌ `Admin/Usuarios/Create.vue`
-6. ❌ `Admin/Usuarios/Edit.vue`
-7. ❌ `Admin/Auditoria/Index.vue`
-8. ❌ `Admin/Seguridad/Index.vue`
-9. ❌ `Admin/Reportes/Index.vue`
+**Características:**
+- 🎨 Sidebar con gradiente dark (from-gray-900 to-gray-800)
+- 🔴 Tema rojo para admin (red-600/red-700)
+- 📍 Navegación con highlight rojo
+- 👤 Perfil de usuario en sidebar
+- 📱 Responsive con modal móvil
 
 ---
 
-## 🎯 **ESTRUCTURA DE ARCHIVOS CREADA**
+### 8. **Lista de Usuarios Admin** ✅
+**Ruta:** `resources/js/Pages/Admin/Usuarios/Index.vue`
+**Endpoint:** `GET /admin/usuarios`
+
+**Características:**
+- 🔍 4 Filtros avanzados:
+  1. Búsqueda (nombre, email, DNI)
+  2. Rol
+  3. Área
+  4. Estado (activo/inactivo)
+- 📊 Tabla completa con:
+  - Avatar con iniciales
+  - Email y DNI
+  - Roles (badges purple)
+  - Área asignada
+  - Estado (badges green/red)
+- ⚡ Acciones rápidas:
+  - Editar (✏️)
+  - Activar/Desactivar (🔒/🔓)
+- 📄 Paginación (15 registros)
+- ➕ Botón "Nuevo Usuario" destacado
+
+**Props requeridos:**
+```javascript
+{
+  usuarios: Object (paginado),
+  roles: Array,
+  areas: Array,
+  filtros: Object
+}
+```
+
+---
+
+### 9. **Crear Usuario Admin** ✅
+**Ruta:** `resources/js/Pages/Admin/Usuarios/Create.vue`
+**Endpoint:** `POST /admin/usuarios`
+
+**Características:**
+- 📝 Formulario dividido en 4 secciones:
+  1. **Información Personal:**
+     - Nombre (requerido)
+     - Apellido
+     - Email (requerido, único)
+     - DNI (único)
+     - Teléfono
+     - Dirección
+  2. **Área de Trabajo:**
+     - Select de área
+  3. **Roles:**
+     - Checkboxes multi-selección con diseño de tarjetas
+     - Highlight rojo al seleccionar
+  4. **Contraseña:**
+     - Contraseña (requerido, mínimo 8 caracteres)
+     - Confirmación de contraseña
+- ✅ Validación en tiempo real
+- 🎨 Diseño con borders y rounded-xl
+
+**Props requeridos:**
+```javascript
+{
+  roles: Array,
+  areas: Array
+}
+```
+
+---
+
+### 10. **Editar Usuario Admin** ✅
+**Ruta:** `resources/js/Pages/Admin/Usuarios/Edit.vue`
+**Endpoint:** `PUT /admin/usuarios/{id}`
+
+**Características:**
+- 📝 Similar a Create con campos pre-llenados
+- ⚠️ Alerta especial si edita su propia cuenta
+- 🔘 Checkbox "Usuario Activo"
+- 🔑 Sección "Cambiar Contraseña" (opcional)
+  - Deja en blanco si no quiere cambiar
+- 🎨 Diseño consistente con Create
+
+**Props requeridos:**
+```javascript
+{
+  usuario: Object (con roles cargados),
+  roles: Array,
+  areas: Array
+}
+```
+
+---
+
+### 11. **Auditoría del Sistema** ✅
+**Ruta:** `resources/js/Pages/Admin/Auditoria/Index.vue`
+**Endpoint:** `GET /admin/auditoria`
+
+**Características:**
+- 🔍 6 Filtros completos:
+  1. Búsqueda general
+  2. Acción (CREAR, ACTUALIZAR, ELIMINAR, LOGIN, LOGOUT)
+  3. Tabla afectada
+  4. Usuario
+  5. Fecha inicio
+  6. Fecha fin
+- 📊 Tabla de registros con:
+  - Usuario que realizó la acción
+  - Acción (con badge de color según tipo)
+  - Tabla y registro afectado
+  - IP de origen (en font-mono)
+  - Fecha y hora completa
+- 🎨 Badges con colores:
+  - CREAR: green
+  - ACTUALIZAR: blue
+  - ELIMINAR: red
+  - LOGIN: purple
+  - LOGOUT: gray
+- 📄 Paginación (20 registros)
+
+**Props requeridos:**
+```javascript
+{
+  registros: Object (paginado),
+  filtros: Object,
+  acciones: Array (distinct),
+  tablas: Array (distinct),
+  usuarios: Array
+}
+```
+
+---
+
+### 12. **Eventos de Seguridad** ✅
+**Ruta:** `resources/js/Pages/Admin/Seguridad/Index.vue`
+**Endpoint:** `GET /admin/seguridad`
+
+**Características:**
+- 🔍 5 Filtros:
+  1. Búsqueda (tipo evento, IP, usuario)
+  2. Tipo de evento
+  3. Severidad (BAJA, MEDIA, ALTA, CRITICA)
+  4. Fecha inicio
+  5. Fecha fin
+- 📊 Tabla de eventos con:
+  - Severidad (con icono y badge)
+    - BAJA: ✅ green
+    - MEDIA: ⚠️ yellow
+    - ALTA: 🔴 orange
+    - CRITICA: 🚨 red
+  - Tipo de evento
+  - Descripción (truncada)
+  - Usuario / IP origen
+  - Fecha y hora
+- 📄 Paginación (20 registros)
+- 🎨 Mensaje positivo si no hay eventos
+
+**Props requeridos:**
+```javascript
+{
+  eventos: Object (paginado),
+  filtros: Object,
+  tiposEvento: Array (distinct),
+  severidades: Array (['BAJA', 'MEDIA', 'ALTA', 'CRITICA'])
+}
+```
+
+---
+
+### 13. **Reportes y Métricas** ✅
+**Ruta:** `resources/js/Pages/Admin/Reportes/Index.vue`
+**Endpoint:** `GET /admin/reportes`
+
+**Características:**
+- 📥 2 Botones de exportación:
+  - Exportar CSV (verde)
+  - Exportar PDF (rojo)
+- 🔍 3 Filtros de rango:
+  1. Fecha inicio
+  2. Fecha fin
+  3. Área (solo admin, opcional)
+- 📊 3 Cards de estadísticas principales:
+  - Total de denuncias
+  - Denuncias cerradas (con %)
+  - En proceso (con %)
+- 📈 Visualización "Distribución por Estado":
+  - Grid 6 columnas
+  - Cards con badges de color
+  - Cantidad y porcentaje
+- 📋 Tabla "Distribución por Categoría":
+  - Nombre de categoría
+  - Cantidad
+  - Porcentaje
+  - Barra de progreso visual
+- 🏢 Grid "Distribución por Área":
+  - Cards con avatar circular
+  - Cantidad de denuncias
+  - Porcentaje destacado
+- 🎨 Gradientes y animaciones smooth
+
+**Props requeridos:**
+```javascript
+{
+  estadisticas: {
+    total: Number,
+    cerradas: Number,
+    en_proceso: Number,
+    por_estado: Array,
+    por_categoria: Array,
+    por_area: Array (nullable)
+  },
+  areas: Array (nullable, solo admin),
+  filtros: {
+    fecha_inicio: String,
+    fecha_fin: String,
+    area_id: Number
+  }
+}
+```
+
+---
+
+## 📝 **ESTADO ACTUAL**
+
+### ✅ **COMPLETADO:**
+- 7 Pantallas de Funcionario/Supervisor
+- 7 Pantallas de Admin
+- 2 Layouts (AuthenticatedLayout, AdminLayout)
+- **Total: 16 pantallas funcionales**
+
+---
+
+## 🎯 **ESTRUCTURA DE ARCHIVOS COMPLETADA**
 
 ```
-resources/js/Pages/
-├── Funcionario/
-│   ├── Dashboard.vue ✅
-│   └── Denuncias/
-│       ├── Index.vue ✅
-│       └── Show.vue ✅
+resources/js/
+├── Layouts/
+│   ├── AuthenticatedLayout.vue ✅ (ciudadano)
+│   └── AdminLayout.vue ✅ (admin)
 │
-└── Supervisor/
-    ├── Dashboard.vue ✅
-    └── Denuncias/ (directorio creado)
-        ├── Index.vue ❌ (pendiente)
-        └── Show.vue ❌ (pendiente)
+├── Pages/
+│   ├── Funcionario/
+│   │   ├── Dashboard.vue ✅
+│   │   └── Denuncias/
+│   │       ├── Index.vue ✅
+│   │       └── Show.vue ✅
+│   │
+│   ├── Supervisor/
+│   │   ├── Dashboard.vue ✅
+│   │   └── Denuncias/
+│   │       ├── Index.vue ✅
+│   │       └── Show.vue ✅
+│   │
+│   └── Admin/
+│       ├── Dashboard.vue ✅
+│       ├── Usuarios/
+│       │   ├── Index.vue ✅
+│       │   ├── Create.vue ✅
+│       │   └── Edit.vue ✅
+│       ├── Auditoria/
+│       │   └── Index.vue ✅
+│       ├── Seguridad/
+│       │   └── Index.vue ✅
+│       └── Reportes/
+│           └── Index.vue ✅
 ```
 
 ---
 
-**Documentación generada:** 2025-12-04
-**Estado:** 7 de 14 pantallas completadas (50%)
-**Tiempo estimado para completar restantes:** 3-4 horas
+**Documentación actualizada:** 2025-12-04
+**Estado:** 16 pantallas completadas (100% fase admin/supervisor/funcionario)
+**Pendientes:** Solo pantallas de ciudadano ya existentes
