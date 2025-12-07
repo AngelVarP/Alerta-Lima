@@ -9,7 +9,8 @@
       "Bash(./setup-database.sh:*)",
       "Bash(sudo -u postgres psql:*)",
       "Bash(cat:*)",
-      "Bash(DB_CONNECTION=pgsql php artisan:*)"
+      "Bash(DB_CONNECTION=pgsql php artisan:*)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []

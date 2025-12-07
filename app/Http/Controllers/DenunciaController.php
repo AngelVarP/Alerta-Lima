@@ -19,15 +19,15 @@ class DenunciaController extends Controller
         // Obtener el usuario autenticado
         $user = Auth::user();
 
-        // DEBUG: Log para verificar
-        \Log::info('Usuario viendo denuncias:', [
-            'user_id' => $user->id,
-            'user_nombre' => $user->nombre,
-        ]);
-
-        // Construir la consulta base
+        // Construir la consulta base con campos específicos para mejor rendimiento
         $query = Denuncia::where('ciudadano_id', $user->id)
-            ->with(['estado', 'categoria', 'prioridad', 'distrito']);
+            ->with([
+                'estado:id,nombre,codigo,color',
+                'categoria:id,nombre',
+                'prioridad:id,nombre,color',
+                'distrito:id,nombre',
+            ])
+            ->select('id', 'codigo', 'titulo', 'descripcion', 'estado_id', 'categoria_id', 'prioridad_id', 'distrito_id', 'creado_en');
 
         // Aplicar filtro de búsqueda si existe
         if ($request->filled('search')) {
@@ -52,14 +52,10 @@ class DenunciaController extends Controller
         // Paginar los resultados
         $denuncias = $query->paginate(10)->withQueryString();
 
-        // DEBUG: Log para verificar resultados
-        \Log::info('Denuncias encontradas:', [
-            'total' => $denuncias->total(),
-            'count' => $denuncias->count(),
-        ]);
-
-        // Obtener todos los estados para el filtro
-        $estados = EstadoDenuncia::all(['id', 'nombre', 'codigo']);
+        // Cachear estados (raramente cambian)
+        $estados = cache()->remember('estados_denuncia', 3600, function () {
+            return EstadoDenuncia::all(['id', 'nombre', 'codigo']);
+        });
 
         return Inertia::render('Ciudadano/Denuncias/Index', [
             'denuncias' => $denuncias,
@@ -76,9 +72,18 @@ class DenunciaController extends Controller
      */
     public function create()
     {
+        // Cachear categorías y distritos (raramente cambian)
+        $categorias = cache()->remember('categorias_activas', 3600, function () {
+            return CategoriaDenuncia::activas()->get(['id', 'nombre', 'descripcion', 'icono']);
+        });
+
+        $distritos = cache()->remember('distritos_lista', 3600, function () {
+            return \App\Models\Distrito::orderBy('nombre')->get(['id', 'nombre']);
+        });
+
         return Inertia::render('Ciudadano/Denuncias/Create', [
-            'categorias' => CategoriaDenuncia::activas()->get(['id', 'nombre', 'descripcion', 'icono']),
-            'distritos' => \App\Models\Distrito::orderBy('nombre')->get(['id', 'nombre']),
+            'categorias' => $categorias,
+            'distritos' => $distritos,
         ]);
     }
 

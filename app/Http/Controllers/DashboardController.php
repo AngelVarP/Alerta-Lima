@@ -35,21 +35,31 @@ class DashboardController extends Controller
     public function ciudadano(Request $request)
     {
         $usuario = $request->user();
-        $estadisticas = $this->obtenerEstadisticas($usuario);
 
-        // Obtener conteo de notificaciones no leídas
+        // Obtener estadísticas y denuncias en paralelo de forma eficiente
+        $total = Denuncia::where('ciudadano_id', $usuario->id)->count();
+        $cerradas = Denuncia::where('ciudadano_id', $usuario->id)
+            ->whereHas('estado', fn ($q) => $q->where('es_final', true))
+            ->count();
+        $abiertas = $total - $cerradas;
+
         $notificacionesNoLeidas = \App\Models\Notificacion::where('usuario_id', $usuario->id)
             ->noLeidas()
             ->count();
 
-        // Obtener denuncias recientes
-        $denunciasRecientes = $this->obtenerDenunciasRecientes($usuario);
+        // Obtener solo las denuncias recientes necesarias (limitadas)
+        $denunciasRecientes = Denuncia::where('ciudadano_id', $usuario->id)
+            ->with(['estado:id,nombre', 'categoria:id,nombre'])
+            ->select('id', 'titulo', 'estado_id', 'categoria_id', 'creado_en')
+            ->orderBy('creado_en', 'desc')
+            ->limit(5)
+            ->get();
 
         return \Inertia\Inertia::render('Ciudadano/Dashboard', [
             'stats' => [
-                'total' => $estadisticas['total'],
-                'resueltas' => $estadisticas['cerradas'], // Asumiendo que 'cerradas' equivale a 'resueltas' o 'atendidas'
-                'en_proceso' => $estadisticas['abiertas'], // Asumiendo que 'abiertas' equivale a 'en proceso'
+                'total' => $total,
+                'resueltas' => $cerradas,
+                'en_proceso' => $abiertas,
                 'notificaciones' => $notificacionesNoLeidas,
             ],
             'activities' => $denunciasRecientes,

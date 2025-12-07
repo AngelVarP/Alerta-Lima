@@ -38,7 +38,6 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'csrf_token' => csrf_token(),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
@@ -48,8 +47,8 @@ class HandleInertiaRequests extends Middleware
                     'dni' => $request->user()->dni,
                     'telefono' => $request->user()->telefono,
                     'direccion' => $request->user()->direccion,
-                    'roles' => $this->getUserRoles($request->user()),
-                    'permissions' => $this->getUserPermissions($request->user()),
+                    'roles' => $this->getUserRolesCached($request->user()),
+                    'permissions' => $this->getUserPermissionsCached($request->user()),
                 ] : null,
             ],
             'noLeidasCount' => $request->user()
@@ -59,33 +58,48 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Obtener roles del usuario
+     * Obtener roles del usuario con caché
      */
-    private function getUserRoles($user): array
+    private function getUserRolesCached($user): array
     {
-        $roles = DB::table('rol_usuario')
-            ->join('roles', 'rol_usuario.rol_id', '=', 'roles.id')
-            ->where('rol_usuario.usuario_id', $user->id)
-            ->pluck('roles.nombre')
-            ->toArray();
-
-        return $roles;
+        return cache()->remember("user_roles_{$user->id}", 3600, function () use ($user) {
+            return DB::table('rol_usuario')
+                ->join('roles', 'rol_usuario.rol_id', '=', 'roles.id')
+                ->where('rol_usuario.usuario_id', $user->id)
+                ->pluck('roles.nombre')
+                ->toArray();
+        });
     }
 
     /**
-     * Obtener permisos del usuario
+     * Obtener permisos del usuario con caché
+     */
+    private function getUserPermissionsCached($user): array
+    {
+        return cache()->remember("user_permissions_{$user->id}", 3600, function () use ($user) {
+            return DB::table('rol_usuario')
+                ->join('rol_permiso', 'rol_usuario.rol_id', '=', 'rol_permiso.rol_id')
+                ->join('permisos', 'rol_permiso.permiso_id', '=', 'permisos.id')
+                ->where('rol_usuario.usuario_id', $user->id)
+                ->pluck('permisos.nombre')
+                ->unique()
+                ->toArray();
+        });
+    }
+
+    /**
+     * Obtener roles del usuario (sin caché - legacy)
+     */
+    private function getUserRoles($user): array
+    {
+        return $this->getUserRolesCached($user);
+    }
+
+    /**
+     * Obtener permisos del usuario (sin caché - legacy)
      */
     private function getUserPermissions($user): array
     {
-        // Obtener permisos a través de roles
-        $permissions = DB::table('rol_usuario')
-            ->join('rol_permiso', 'rol_usuario.rol_id', '=', 'rol_permiso.rol_id')
-            ->join('permisos', 'rol_permiso.permiso_id', '=', 'permisos.id')
-            ->where('rol_usuario.usuario_id', $user->id)
-            ->pluck('permisos.nombre')
-            ->unique()
-            ->toArray();
-
-        return $permissions;
+        return $this->getUserPermissionsCached($user);
     }
 }

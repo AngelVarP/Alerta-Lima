@@ -25,10 +25,27 @@ Route::post('/register', [AuthController::class, 'register']);
 // Rutas protegidas (requieren autenticación)
 Route::middleware('auth')->group(function () {
 
+    // --- RUTA DASHBOARD INTELIGENTE (redirige según rol) ---
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        // Redirigir según el rol del usuario (jerarquía: admin > supervisor > funcionario > ciudadano)
+        if ($user->esAdmin()) {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->tieneRol('supervisor')) {
+            return redirect()->route('supervisor.dashboard');
+        } elseif ($user->tieneRol('funcionario')) {
+            return redirect()->route('funcionario.dashboard');
+        } else {
+            // Si es ciudadano o cualquier otro rol, mostrar dashboard de ciudadano
+            return app(DashboardController::class)->ciudadano(request());
+        }
+    })->name('dashboard');
+
     // --- RUTAS DEL CIUDADANO ---
     Route::middleware('role:ciudadano')->group(function () {
-        // Dashboard del Ciudadano
-        Route::get('/dashboard', [DashboardController::class, 'ciudadano'])->name('dashboard');
+        // Dashboard del Ciudadano (ruta específica interna)
+        Route::get('/ciudadano/dashboard', [DashboardController::class, 'ciudadano'])->name('ciudadano.dashboard');
 
         // Mis Denuncias
         Route::get('/mis-denuncias', [DenunciaController::class, 'index'])->name('denuncias.index');
@@ -116,4 +133,30 @@ Route::middleware('auth')->group(function () {
         Route::put('/comentarios/{comentario}', [ComentarioController::class, 'update'])->name('comentarios.update');
         Route::delete('/comentarios/{comentario}', [ComentarioController::class, 'destroy'])->name('comentarios.destroy');
     });
+
+    // --- RUTA DE DIAGNÓSTICO (TEMPORAL - ELIMINAR EN PRODUCCIÓN) ---
+    Route::get('/debug-user', function () {
+        $user = auth()->user();
+        $roles = \Illuminate\Support\Facades\DB::table('rol_usuario')
+            ->join('roles', 'rol_usuario.rol_id', '=', 'roles.id')
+            ->where('rol_usuario.usuario_id', $user->id)
+            ->select('roles.id', 'roles.nombre', 'roles.codigo')
+            ->get();
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'nombre' => $user->nombre,
+                'apellido' => $user->apellido,
+                'email' => $user->email,
+            ],
+            'roles' => $roles,
+            'tieneRol_ciudadano' => $user->tieneRol('ciudadano'),
+            'tieneRol_funcionario' => $user->tieneRol('funcionario'),
+            'tieneRol_supervisor' => $user->tieneRol('supervisor'),
+            'tieneRol_admin' => $user->tieneRol('admin'),
+            'esAdmin' => $user->esAdmin(),
+            'esFuncionario' => $user->esFuncionario(),
+        ]);
+    })->name('debug.user');
 });

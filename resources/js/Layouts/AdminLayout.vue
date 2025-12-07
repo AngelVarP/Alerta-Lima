@@ -81,26 +81,28 @@ const menuItems = computed(() => [
 
                 <!-- User Profile -->
                 <div class="flex-shrink-0 border-t border-gray-700 p-4">
-                    <div class="flex items-center gap-3 px-3 py-3 bg-gray-800/50 rounded-xl">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                                {{ $page.props.auth.user.nombre.charAt(0) }}{{ $page.props.auth.user.apellido.charAt(0) }}
+                    <div class="px-3 py-3 bg-gray-800/50 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-11 h-11 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    {{ $page.props.auth.user.nombre[0].toUpperCase() }}{{ $page.props.auth.user.apellido[0].toUpperCase() }}
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-white truncate">
+                                    {{ $page.props.auth.user.nombre }} {{ $page.props.auth.user.apellido }}
+                                </p>
+                                <p class="text-xs text-gray-400 truncate">Administrador</p>
                             </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">
-                                {{ $page.props.auth.user.nombre }} {{ $page.props.auth.user.apellido }}
-                            </p>
-                            <p class="text-xs text-gray-400 truncate">Administrador</p>
-                        </div>
+                        <button
+                            @click="logout"
+                            class="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-900/20 rounded-lg transition-all duration-200 border border-red-800"
+                        >
+                            <span class="mr-2">🚪</span>
+                            Cerrar Sesión
+                        </button>
                     </div>
-                    <button
-                        @click="logout"
-                        class="mt-3 w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-900/20 rounded-xl transition-all duration-200"
-                    >
-                        <span class="mr-2">🚪</span>
-                        Cerrar Sesión
-                    </button>
                 </div>
             </div>
         </div>
