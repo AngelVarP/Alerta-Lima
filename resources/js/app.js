@@ -5,6 +5,7 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import { router } from '@inertiajs/vue3';
 
 import { Ziggy } from './ziggy';
 
@@ -22,4 +23,15 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+});
+
+// Actualizar el token CSRF en el DOM cuando cambie en las props de Inertia
+router.on('navigate', (event) => {
+    const csrfToken = event.detail.page.props.csrf_token;
+    if (csrfToken) {
+        const metaTag = document.head.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            metaTag.setAttribute('content', csrfToken);
+        }
+    }
 });

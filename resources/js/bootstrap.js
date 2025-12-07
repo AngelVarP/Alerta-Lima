@@ -3,11 +3,19 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-// Configurar token CSRF para todas las peticiones
-const token = document.head.querySelector('meta[name="csrf-token"]');
+// Función para actualizar el token CSRF
+function updateCsrfToken() {
+    const token = document.head.querySelector('meta[name="csrf-token"]');
 
-if (token) {
-    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-} else {
-    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+    if (token) {
+        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+    } else {
+        console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+    }
 }
+
+// Configurar token CSRF inicial
+updateCsrfToken();
+
+// Actualizar token CSRF en cada navegación de Inertia
+document.addEventListener('inertia:navigate', updateCsrfToken);
