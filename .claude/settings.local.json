@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(./vendor/bin/pint:*)",
+      "Bash(psql:*)",
+      "Bash(sudo service postgresql status:*)",
+      "Bash(chmod:*)",
+      "Bash(./setup-database.sh:*)",
+      "Bash(sudo -u postgres psql:*)",
+      "Bash(cat:*)",
+      "Bash(DB_CONNECTION=pgsql php artisan:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -21,7 +21,7 @@ class NotificacionController extends Controller
             ->with([
                 'denuncia' => function ($q) {
                     $q->select('id', 'codigo', 'titulo');
-                }
+                },
             ])
             ->orderBy('creado_en', 'desc');
 

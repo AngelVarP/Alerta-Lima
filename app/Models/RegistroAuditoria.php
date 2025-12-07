@@ -12,6 +12,7 @@ class RegistroAuditoria extends Model
     protected $table = 'registros_auditoria';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

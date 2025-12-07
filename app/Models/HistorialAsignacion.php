@@ -12,6 +12,7 @@ class HistorialAsignacion extends Model
     protected $table = 'historial_asignaciones';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

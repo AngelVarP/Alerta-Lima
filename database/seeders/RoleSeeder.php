@@ -88,7 +88,7 @@ class RoleSeeder extends Seeder
             'reasignar_denuncia',
             'cambiar_prioridad',
             'ver_dashboard',
-            'ver_reportes'
+            'ver_reportes',
         ];
         foreach ($permisosSupervisor as $permiso) {
             DB::table('rol_permiso')->updateOrInsert(
@@ -101,7 +101,7 @@ class RoleSeeder extends Seeder
         foreach ($permisosIds as $permisoId) {
             DB::table('rol_permiso')->insert([
                 'rol_id' => $roleAdmin,
-                'permiso_id' => $permisoId
+                'permiso_id' => $permisoId,
             ]);
         }
     }

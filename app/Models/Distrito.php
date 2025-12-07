@@ -12,6 +12,7 @@ class Distrito extends Model
     protected $table = 'distritos';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Denuncia;
 use App\Models\Area;
-use App\Models\EstadoDenuncia;
 use App\Models\CategoriaDenuncia;
+use App\Models\Denuncia;
+use App\Models\EstadoDenuncia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -63,7 +63,7 @@ class ReporteController extends Controller
             ->whereBetween('creado_en', [$validated['fecha_inicio'], $validated['fecha_fin']]);
 
         // Filtrar por área si no es admin
-        if (!$usuario->esAdmin()) {
+        if (! $usuario->esAdmin()) {
             $query->where('area_id', $usuario->area_id);
         } elseif (isset($validated['area_id'])) {
             $query->where('area_id', $validated['area_id']);
@@ -82,14 +82,14 @@ class ReporteController extends Controller
         // Generar CSV
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="reporte_denuncias_' . now()->format('Y-m-d_His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="reporte_denuncias_'.now()->format('Y-m-d_His').'.csv"',
         ];
 
         $callback = function () use ($denuncias) {
             $file = fopen('php://output', 'w');
 
             // BOM para UTF-8
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // Encabezados
             fputcsv($file, [
@@ -197,7 +197,7 @@ class ReporteController extends Controller
     {
         $usuario = $request->user();
 
-        if (!$usuario->esAdmin() && !$usuario->tieneRol('supervisor')) {
+        if (! $usuario->esAdmin() && ! $usuario->tieneRol('supervisor')) {
             abort(403, 'No tienes permiso para ver este reporte.');
         }
 
@@ -317,7 +317,7 @@ class ReporteController extends Controller
                 if ($areaId) {
                     $q->where('area_id', $areaId);
                 }
-            }
+            },
         ])->get();
 
         // Por categoría
@@ -327,12 +327,12 @@ class ReporteController extends Controller
                 if ($areaId) {
                     $q->where('area_id', $areaId);
                 }
-            }
+            },
         ])->activas()->get();
 
         // Por área (solo si es admin y no filtró por área)
-        $porArea = !$areaId ? Area::withCount([
-            'denuncias' => fn($q) => $q->whereBetween('creado_en', [$fechaInicio, $fechaFin])
+        $porArea = ! $areaId ? Area::withCount([
+            'denuncias' => fn ($q) => $q->whereBetween('creado_en', [$fechaInicio, $fechaFin]),
         ])->activas()->get() : null;
 
         return [

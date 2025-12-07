@@ -12,6 +12,7 @@ class AdjuntoDenuncia extends Model
     protected $table = 'adjuntos_denuncia';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
@@ -40,6 +41,6 @@ class AdjuntoDenuncia extends Model
     // Accessor para URL pública del archivo
     public function getUrlAttribute()
     {
-        return asset('storage/' . $this->ruta_archivo);
+        return asset('storage/'.$this->ruta_archivo);
     }
 }

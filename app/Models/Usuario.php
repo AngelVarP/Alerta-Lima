@@ -10,12 +10,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, HasRoles;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $table = 'usuarios';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
+
     const DELETED_AT = 'eliminado_en';
 
     protected $fillable = [
@@ -128,6 +130,6 @@ class Usuario extends Authenticatable
 
     public function getNombreCompletoAttribute(): string
     {
-        return trim($this->nombre . ' ' . $this->apellido);
+        return trim($this->nombre.' '.$this->apellido);
     }
 }

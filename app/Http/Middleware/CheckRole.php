@@ -16,7 +16,7 @@ class CheckRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         // Verificar si el usuario está autenticado
-        if (!$request->user()) {
+        if (! $request->user()) {
             return redirect()->route('login');
         }
 

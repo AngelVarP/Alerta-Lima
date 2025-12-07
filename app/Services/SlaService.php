@@ -13,7 +13,7 @@ class SlaService
      */
     public function calcularFechaLimiteSLA(Denuncia $denuncia): ?Carbon
     {
-        if (!$denuncia->prioridad || !$denuncia->prioridad->sla_horas) {
+        if (! $denuncia->prioridad || ! $denuncia->prioridad->sla_horas) {
             return null;
         }
 
@@ -27,7 +27,7 @@ class SlaService
      */
     public function estaVencido(Denuncia $denuncia): bool
     {
-        if (!$denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
+        if (! $denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
             return false;
         }
 
@@ -39,7 +39,7 @@ class SlaService
      */
     public function estaProximoVencer(Denuncia $denuncia): bool
     {
-        if (!$denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
+        if (! $denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
             return false;
         }
 
@@ -53,7 +53,7 @@ class SlaService
      */
     public function horasRestantes(Denuncia $denuncia): ?int
     {
-        if (!$denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
+        if (! $denuncia->fecha_limite_sla || $denuncia->cerrada_en) {
             return null;
         }
 
@@ -67,7 +67,7 @@ class SlaService
      */
     public function porcentajeTranscurrido(Denuncia $denuncia): ?float
     {
-        if (!$denuncia->fecha_limite_sla || !$denuncia->prioridad) {
+        if (! $denuncia->fecha_limite_sla || ! $denuncia->prioridad) {
             return null;
         }
 
@@ -85,7 +85,7 @@ class SlaService
      */
     public function fueCumplido(Denuncia $denuncia): ?bool
     {
-        if (!$denuncia->cerrada_en || !$denuncia->fecha_limite_sla) {
+        if (! $denuncia->cerrada_en || ! $denuncia->fecha_limite_sla) {
             return null;
         }
 
@@ -97,7 +97,7 @@ class SlaService
      */
     public function tiempoResolucion(Denuncia $denuncia): ?int
     {
-        if (!$denuncia->cerrada_en) {
+        if (! $denuncia->cerrada_en) {
             return null;
         }
 

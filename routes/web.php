@@ -1,18 +1,18 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DenunciaController;
-use App\Http\Controllers\NotificacionController;
-use App\Http\Controllers\FuncionarioController;
-use App\Http\Controllers\SupervisorController;
-use App\Http\Controllers\ComentarioController;
-use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ComentarioController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DenunciaController;
+use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\SupervisorController;
 use App\Http\Controllers\UsuarioController;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Rutas de autenticación
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');

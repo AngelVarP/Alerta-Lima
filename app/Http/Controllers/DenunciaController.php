@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CategoriaDenuncia;
 use App\Models\Denuncia;
 use App\Models\EstadoDenuncia;
-use App\Models\CategoriaDenuncia;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class DenunciaController extends Controller
 {
@@ -103,13 +103,23 @@ class DenunciaController extends Controller
         $year = date('Y');
         $lastDenuncia = Denuncia::whereYear('creado_en', $year)->orderBy('id', 'desc')->first();
         $nextNumber = $lastDenuncia ? (intval(substr($lastDenuncia->codigo, -5)) + 1) : 1;
-        $codigo = 'DEN-' . $year . '-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        $codigo = 'DEN-'.$year.'-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
 
         // Obtener el estado inicial "Registrada"
         $estadoRegistrada = EstadoDenuncia::where('codigo', 'REG')->first();
 
         // Obtener la prioridad por defecto (Media)
         $prioridadMedia = \App\Models\PrioridadDenuncia::where('codigo', 'MED')->first();
+
+        // Obtener el área automática según la categoría
+        $categoria = CategoriaDenuncia::find($validated['categoria_id']);
+        $areaId = $categoria->area_default_id;
+
+        // Calcular fecha límite de SLA
+        $registradaEn = now();
+        $fechaLimiteSla = $prioridadMedia && $prioridadMedia->sla_horas
+            ? $registradaEn->copy()->addHours($prioridadMedia->sla_horas)
+            : $registradaEn->copy()->addHours(72); // 72 horas por defecto
 
         // Crear la denuncia
         $denuncia = Denuncia::create([
@@ -118,12 +128,15 @@ class DenunciaController extends Controller
             'categoria_id' => $validated['categoria_id'],
             'estado_id' => $estadoRegistrada->id,
             'prioridad_id' => $prioridadMedia ? $prioridadMedia->id : null,
+            'area_id' => $areaId,
             'distrito_id' => $validated['distrito_id'],
             'titulo' => $validated['titulo'],
             'descripcion' => $validated['descripcion'],
             'direccion' => $validated['direccion'],
             'referencia' => $validated['referencia'] ?? null,
             'es_anonima' => $request->boolean('es_anonima', false),
+            'registrada_en' => $registradaEn,
+            'fecha_limite_sla' => $fechaLimiteSla,
             'ip_origen' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -132,7 +145,7 @@ class DenunciaController extends Controller
         if ($request->hasFile('adjuntos')) {
             foreach ($request->file('adjuntos') as $file) {
                 // Guardar archivo en storage/app/public/denuncias
-                $path = $file->store('denuncias/' . $denuncia->id, 'public');
+                $path = $file->store('denuncias/'.$denuncia->id, 'public');
 
                 // Crear registro en la tabla adjuntos_denuncia
                 \App\Models\AdjuntoDenuncia::create([
@@ -146,7 +159,7 @@ class DenunciaController extends Controller
         }
 
         return redirect()->route('denuncias.index')
-            ->with('success', '¡Denuncia registrada exitosamente! Código: ' . $codigo);
+            ->with('success', '¡Denuncia registrada exitosamente! Código: '.$codigo);
     }
 
     /**
@@ -167,7 +180,7 @@ class DenunciaController extends Controller
             'prioridad',
             'adjuntos',
             'historialEstados.estadoNuevo',
-            'historialEstados.cambiadoPor'
+            'historialEstados.cambiadoPor',
         ]);
 
         return Inertia::render('Ciudadano/Denuncias/Show', [

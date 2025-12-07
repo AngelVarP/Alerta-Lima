@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Area;
+use App\Models\RegistroAuditoria;
 use App\Models\Rol;
 use App\Models\Usuario;
-use App\Models\RegistroAuditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -20,14 +20,14 @@ class UsuarioController extends Controller
         if ($request->filled('buscar')) {
             $query->where(function ($q) use ($request) {
                 $q->where('nombre', 'like', "%{$request->buscar}%")
-                  ->orWhere('apellido', 'like', "%{$request->buscar}%")
-                  ->orWhere('email', 'like', "%{$request->buscar}%")
-                  ->orWhere('dni', 'like', "%{$request->buscar}%");
+                    ->orWhere('apellido', 'like', "%{$request->buscar}%")
+                    ->orWhere('email', 'like', "%{$request->buscar}%")
+                    ->orWhere('dni', 'like', "%{$request->buscar}%");
             });
         }
 
         if ($request->filled('rol')) {
-            $query->whereHas('roles', fn($q) => $q->where('roles.id', $request->rol));
+            $query->whereHas('roles', fn ($q) => $q->where('roles.id', $request->rol));
         }
 
         if ($request->filled('area')) {
@@ -99,7 +99,7 @@ class UsuarioController extends Controller
             $usuario->toArray()
         );
 
-        return redirect()->route('usuarios.index')
+        return redirect()->route('admin.usuarios.index')
             ->with('success', 'Usuario creado exitosamente.');
     }
 
@@ -145,7 +145,7 @@ class UsuarioController extends Controller
             'activo' => $validated['activo'] ?? true,
         ]);
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $usuario->update(['password_hash' => Hash::make($validated['password'])]);
         }
 
@@ -160,13 +160,13 @@ class UsuarioController extends Controller
             $usuario->fresh()->toArray()
         );
 
-        return redirect()->route('usuarios.index')
+        return redirect()->route('admin.usuarios.index')
             ->with('success', 'Usuario actualizado exitosamente.');
     }
 
     public function toggleActivo(Request $request, Usuario $usuario)
     {
-        $usuario->update(['activo' => !$usuario->activo]);
+        $usuario->update(['activo' => ! $usuario->activo]);
 
         $accion = $usuario->activo ? 'activado' : 'desactivado';
 

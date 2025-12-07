@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Denuncia;
 use App\Models\Comentario;
+use App\Models\Denuncia;
 use Illuminate\Http\Request;
 
 class ComentarioController extends Controller
@@ -27,7 +27,7 @@ class ComentarioController extends Controller
         ]);
 
         // Si el comentario es público, notificar al ciudadano
-        if (!$comentario->es_interno) {
+        if (! $comentario->es_interno) {
             \App\Models\Notificacion::create([
                 'usuario_id' => $denuncia->ciudadano_id,
                 'denuncia_id' => $denuncia->id,
@@ -47,7 +47,7 @@ class ComentarioController extends Controller
     public function update(Request $request, Comentario $comentario)
     {
         // Solo el autor puede editar su comentario
-        if ($comentario->usuario_id !== $request->user()->id && !$request->user()->esAdmin()) {
+        if ($comentario->usuario_id !== $request->user()->id && ! $request->user()->esAdmin()) {
             abort(403, 'No tienes permiso para editar este comentario.');
         }
 
@@ -69,7 +69,7 @@ class ComentarioController extends Controller
     public function destroy(Request $request, Comentario $comentario)
     {
         // Solo el autor o admin pueden eliminar
-        if ($comentario->usuario_id !== $request->user()->id && !$request->user()->esAdmin()) {
+        if ($comentario->usuario_id !== $request->user()->id && ! $request->user()->esAdmin()) {
             abort(403, 'No tienes permiso para eliminar este comentario.');
         }
 

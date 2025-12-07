@@ -12,6 +12,7 @@ class Area extends Model
     protected $table = 'areas';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [

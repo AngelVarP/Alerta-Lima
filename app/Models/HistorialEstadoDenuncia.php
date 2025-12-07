@@ -12,6 +12,7 @@ class HistorialEstadoDenuncia extends Model
     protected $table = 'historial_estados_denuncia';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

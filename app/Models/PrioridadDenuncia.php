@@ -12,6 +12,7 @@ class PrioridadDenuncia extends Model
     protected $table = 'prioridades_denuncia';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [

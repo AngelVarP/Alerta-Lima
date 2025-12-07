@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RegistroAuditoria;
 use App\Models\EventoSeguridad;
+use App\Models\RegistroAuditoria;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +16,7 @@ class AuditoriaController extends Controller
     public function index(Request $request)
     {
         // Solo admin puede ver auditoría
-        if (!$request->user()->esAdmin()) {
+        if (! $request->user()->esAdmin()) {
             abort(403, 'No tienes permiso para acceder a esta página.');
         }
 
@@ -27,9 +27,9 @@ class AuditoriaController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('accion', 'like', "%{$search}%")
-                    ->orWhere('tabla_afectada', 'like', "%{$search}%")
-                    ->orWhere('registro_id', 'like', "%{$search}%")
-                    ->orWhereHas('usuario', fn($q) => $q->where('nombre', 'like', "%{$search}%"));
+                    ->orWhere('tipo_entidad', 'like', "%{$search}%")
+                    ->orWhere('id_entidad', 'like', "%{$search}%")
+                    ->orWhereHas('usuario', fn ($q) => $q->where('nombre', 'like', "%{$search}%"));
             });
         }
 
@@ -38,7 +38,7 @@ class AuditoriaController extends Controller
         }
 
         if ($request->filled('tabla')) {
-            $query->where('tabla_afectada', $request->input('tabla'));
+            $query->where('tipo_entidad', $request->input('tabla'));
         }
 
         if ($request->filled('usuario_id')) {
@@ -63,10 +63,10 @@ class AuditoriaController extends Controller
             ->orderBy('accion')
             ->pluck('accion');
 
-        $tablas = RegistroAuditoria::select('tabla_afectada')
+        $tablas = RegistroAuditoria::select('tipo_entidad')
             ->distinct()
-            ->orderBy('tabla_afectada')
-            ->pluck('tabla_afectada');
+            ->orderBy('tipo_entidad')
+            ->pluck('tipo_entidad');
 
         $usuarios = Usuario::where('activo', true)
             ->orderBy('nombre')
@@ -86,7 +86,7 @@ class AuditoriaController extends Controller
      */
     public function show(RegistroAuditoria $registro)
     {
-        if (!request()->user()->esAdmin()) {
+        if (! request()->user()->esAdmin()) {
             abort(403);
         }
 
@@ -102,7 +102,7 @@ class AuditoriaController extends Controller
      */
     public function eventosSeguridad(Request $request)
     {
-        if (!$request->user()->esAdmin()) {
+        if (! $request->user()->esAdmin()) {
             abort(403);
         }
 
@@ -114,7 +114,7 @@ class AuditoriaController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('tipo_evento', 'like', "%{$search}%")
                     ->orWhere('ip_origen', 'like', "%{$search}%")
-                    ->orWhereHas('usuario', fn($q) => $q->where('nombre', 'like', "%{$search}%"));
+                    ->orWhereHas('usuario', fn ($q) => $q->where('nombre', 'like', "%{$search}%"));
             });
         }
 
@@ -159,7 +159,7 @@ class AuditoriaController extends Controller
      */
     public function showEventoSeguridad(EventoSeguridad $evento)
     {
-        if (!request()->user()->esAdmin()) {
+        if (! request()->user()->esAdmin()) {
             abort(403);
         }
 
@@ -175,7 +175,7 @@ class AuditoriaController extends Controller
      */
     public function estadisticas(Request $request)
     {
-        if (!$request->user()->esAdmin()) {
+        if (! $request->user()->esAdmin()) {
             abort(403);
         }
 

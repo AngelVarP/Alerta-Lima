@@ -12,6 +12,7 @@ class EventoSeguridad extends Model
     protected $table = 'eventos_seguridad';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

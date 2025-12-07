@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Denuncia;
-use App\Models\Area;
-use App\Models\Usuario;
-use App\Models\EstadoDenuncia;
 use App\Models\CategoriaDenuncia;
-use App\Models\PrioridadDenuncia;
+use App\Models\Denuncia;
+use App\Models\EstadoDenuncia;
 use App\Models\HistorialAsignacion;
+use App\Models\PrioridadDenuncia;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class SupervisorController extends Controller
 {
@@ -29,13 +28,13 @@ class SupervisorController extends Controller
                 ->whereNull('asignado_a_id')
                 ->count(),
             'en_proceso' => Denuncia::where('area_id', $usuario->area_id)
-                ->whereHas('estado', fn($q) => $q->where('codigo', 'PRO'))
+                ->whereHas('estado', fn ($q) => $q->where('codigo', 'PRO'))
                 ->count(),
             'sla_vencido' => Denuncia::where('area_id', $usuario->area_id)
                 ->slaPendiente()
                 ->count(),
             'cerradas_mes' => Denuncia::where('area_id', $usuario->area_id)
-                ->whereHas('estado', fn($q) => $q->where('es_final', true))
+                ->whereHas('estado', fn ($q) => $q->where('es_final', true))
                 ->whereMonth('cerrada_en', now()->month)
                 ->count(),
         ];
@@ -58,10 +57,10 @@ class SupervisorController extends Controller
         // Rendimiento del equipo
         $rendimientoEquipo = Usuario::where('area_id', $usuario->area_id)
             ->where('activo', true)
-            ->whereHas('roles', fn($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
+            ->whereHas('roles', fn ($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
             ->withCount([
-                'denunciasAsignadas as asignadas_activas' => fn($q) => $q->whereNull('cerrada_en'),
-                'denunciasAsignadas as cerradas_mes' => fn($q) => $q->whereMonth('cerrada_en', now()->month),
+                'denunciasAsignadas as asignadas_activas' => fn ($q) => $q->whereNull('cerrada_en'),
+                'denunciasAsignadas as cerradas_mes' => fn ($q) => $q->whereMonth('cerrada_en', now()->month),
             ])
             ->get(['id', 'nombre', 'apellido']);
 
@@ -97,7 +96,7 @@ class SupervisorController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('codigo', 'like', "%{$search}%")
                     ->orWhere('titulo', 'like', "%{$search}%")
-                    ->orWhereHas('ciudadano', fn($q) => $q->where('nombre', 'like', "%{$search}%"));
+                    ->orWhereHas('ciudadano', fn ($q) => $q->where('nombre', 'like', "%{$search}%"));
             });
         }
 
@@ -119,7 +118,7 @@ class SupervisorController extends Controller
         // Datos para filtros
         $estados = EstadoDenuncia::all(['id', 'nombre', 'codigo', 'color']);
         $funcionarios = Usuario::where('area_id', $usuario->area_id)
-            ->whereHas('roles', fn($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
+            ->whereHas('roles', fn ($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
             ->get(['id', 'nombre', 'apellido']);
 
         return Inertia::render('Supervisor/Denuncias/Index', [
@@ -157,7 +156,7 @@ class SupervisorController extends Controller
         // Funcionarios disponibles para asignación/reasignación
         $funcionariosArea = Usuario::where('area_id', $denuncia->area_id)
             ->where('activo', true)
-            ->whereHas('roles', fn($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
+            ->whereHas('roles', fn ($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
             ->get(['id', 'nombre', 'apellido']);
 
         // Estados disponibles
@@ -359,12 +358,12 @@ class SupervisorController extends Controller
 
         // Denuncias por estado
         $porEstado = EstadoDenuncia::withCount([
-            'denuncias' => fn($q) => $q->where('area_id', $usuario->area_id)
+            'denuncias' => fn ($q) => $q->where('area_id', $usuario->area_id),
         ])->get();
 
         // Denuncias por categoría
         $porCategoria = CategoriaDenuncia::withCount([
-            'denuncias' => fn($q) => $q->where('area_id', $usuario->area_id)
+            'denuncias' => fn ($q) => $q->where('area_id', $usuario->area_id),
         ])->activas()->get();
 
         return Inertia::render('Supervisor/Reportes', [

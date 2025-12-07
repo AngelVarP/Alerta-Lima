@@ -13,7 +13,9 @@ class Denuncia extends Model
     protected $table = 'denuncias';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
+
     const DELETED_AT = 'eliminado_en';
 
     protected $fillable = [
@@ -119,7 +121,7 @@ class Denuncia extends Model
 
     public function scopePorEstado($query, string $codigoEstado)
     {
-        return $query->whereHas('estado', fn($q) => $q->where('codigo', $codigoEstado));
+        return $query->whereHas('estado', fn ($q) => $q->where('codigo', $codigoEstado));
     }
 
     public function scopeSlaPendiente($query)

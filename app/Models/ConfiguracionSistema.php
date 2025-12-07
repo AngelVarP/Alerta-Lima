@@ -11,11 +11,15 @@ class ConfiguracionSistema extends Model
     use HasFactory;
 
     protected $table = 'configuracion_sistema';
+
     protected $primaryKey = 'clave';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
@@ -49,7 +53,7 @@ class ConfiguracionSistema extends Model
         return Cache::remember("config.{$clave}", 3600, function () use ($clave, $default) {
             $config = self::find($clave);
 
-            if (!$config) {
+            if (! $config) {
                 return $default;
             }
 

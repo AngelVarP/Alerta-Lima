@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Denuncia;
 use App\Models\Notificacion;
 use App\Models\Usuario;
-use App\Models\Denuncia;
 
 class NotificacionService
 {
@@ -134,7 +134,7 @@ class NotificacionService
         // Notificar al supervisor del área
         if ($denuncia->area) {
             $supervisores = Usuario::where('area_id', $denuncia->area_id)
-                ->whereHas('roles', fn($q) => $q->where('nombre', 'supervisor'))
+                ->whereHas('roles', fn ($q) => $q->where('nombre', 'supervisor'))
                 ->get();
 
             foreach ($supervisores as $supervisor) {

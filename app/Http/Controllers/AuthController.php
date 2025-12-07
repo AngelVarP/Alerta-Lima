@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -40,14 +40,14 @@ class AuthController extends Controller
         $usuario = Usuario::where($fieldType, $loginField)->first();
 
         // Verificar si existe y la contraseña es correcta
-        if (!$usuario || !Hash::check($password, $usuario->password_hash)) {
+        if (! $usuario || ! Hash::check($password, $usuario->password_hash)) {
             throw ValidationException::withMessages([
                 'login' => ['Las credenciales proporcionadas son incorrectas.'],
             ]);
         }
 
         // Verificar si el usuario está activo
-        if (!$usuario->activo) {
+        if (! $usuario->activo) {
             throw ValidationException::withMessages([
                 'email' => ['Tu cuenta está desactivada. Contacta al administrador.'],
             ]);
@@ -73,11 +73,11 @@ class AuthController extends Controller
 
         // Redirigir según el rol del usuario
         if ($usuario->tieneRol('admin')) {
-            return redirect()->intended('/admin');
+            return redirect()->intended('/admin/dashboard');
         } elseif ($usuario->tieneRol('supervisor')) {
-            return redirect()->intended('/supervisor');
+            return redirect()->intended('/supervisor/dashboard');
         } elseif ($usuario->tieneRol('funcionario')) {
-            return redirect()->intended('/funcionario');
+            return redirect()->intended('/funcionario/dashboard');
         } else {
             // Ciudadano por defecto
             return redirect()->intended('/dashboard');
@@ -127,7 +127,7 @@ class AuthController extends Controller
         DB::table('rol_usuario')->insert([
             'usuario_id' => $usuario->id,
             'rol_id' => $roleCiudadanoId,
-            'model_type' => 'App\\Models\\Usuario'
+            'model_type' => 'App\\Models\\Usuario',
         ]);
 
         // Login automático después del registro

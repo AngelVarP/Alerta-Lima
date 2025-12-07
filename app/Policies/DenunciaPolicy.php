@@ -213,7 +213,7 @@ class DenunciaPolicy
         }
 
         // Ciudadano puede agregar adjuntos a su propia denuncia si no está cerrada
-        if ($denuncia->ciudadano_id === $usuario->id && !$denuncia->estado->es_final) {
+        if ($denuncia->ciudadano_id === $usuario->id && ! $denuncia->estado->es_final) {
             return true;
         }
 

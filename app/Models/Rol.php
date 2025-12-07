@@ -12,6 +12,7 @@ class Rol extends Model
     protected $table = 'roles';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [

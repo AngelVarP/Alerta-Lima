@@ -12,6 +12,7 @@ class Notificacion extends Model
     protected $table = 'notificaciones';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
@@ -44,7 +45,7 @@ class Notificacion extends Model
     // Relaciones
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'usuario_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function denuncia()

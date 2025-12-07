@@ -21,6 +21,7 @@ class ProfileController extends Controller
             'status' => session('status'),
         ]);
     }
+
     public function update(Request $request)
     {
         $usuario = $request->user();

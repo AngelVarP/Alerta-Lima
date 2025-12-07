@@ -62,7 +62,7 @@ class CatalogSeeder extends Seeder
         // 4. CATEGORÍAS (Requiere IDs de Áreas)
         // -------------------------------------------------------
         // Helper para obtener ID de área rápido
-        $getAreaId = fn($codigo) => DB::table('areas')->where('codigo', $codigo)->value('id');
+        $getAreaId = fn ($codigo) => DB::table('areas')->where('codigo', $codigo)->value('id');
 
         $categorias = [
             ['nombre' => 'Basura', 'descripcion' => 'Acumulación de residuos sólidos en vía pública', 'icono' => 'trash', 'color' => '#84CC16', 'area_code' => 'LIMP', 'orden' => 1],

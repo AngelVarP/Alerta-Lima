@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CategoriaDenuncia;
 use App\Models\Denuncia;
 use App\Models\EstadoDenuncia;
-use App\Models\CategoriaDenuncia;
 use App\Models\PrioridadDenuncia;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class FuncionarioController extends Controller
 {
@@ -27,7 +27,7 @@ class FuncionarioController extends Controller
                 ->whereNull('cerrada_en')
                 ->count(),
             'en_proceso' => Denuncia::where('area_id', $usuario->area_id)
-                ->whereHas('estado', fn($q) => $q->where('codigo', 'PRO'))
+                ->whereHas('estado', fn ($q) => $q->where('codigo', 'PRO'))
                 ->count(),
             'sla_vencido' => Denuncia::where('area_id', $usuario->area_id)
                 ->slaPendiente()
@@ -50,7 +50,7 @@ class FuncionarioController extends Controller
 
         // Estadísticas por estado
         $porEstado = EstadoDenuncia::withCount([
-            'denuncias' => fn($q) => $q->where('area_id', $usuario->area_id)
+            'denuncias' => fn ($q) => $q->where('area_id', $usuario->area_id),
         ])->get();
 
         return Inertia::render('Funcionario/Dashboard', [
@@ -119,7 +119,7 @@ class FuncionarioController extends Controller
         $categorias = CategoriaDenuncia::activas()->get(['id', 'nombre', 'icono']);
         $prioridades = PrioridadDenuncia::all(['id', 'nombre', 'codigo', 'color']);
         $funcionarios = Usuario::where('area_id', $usuario->area_id)
-            ->whereHas('roles', fn($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
+            ->whereHas('roles', fn ($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
             ->get(['id', 'nombre', 'apellido']);
 
         return Inertia::render('Funcionario/Denuncias/Index', [
@@ -163,7 +163,7 @@ class FuncionarioController extends Controller
         // Funcionarios del área para asignación
         $funcionariosArea = Usuario::where('area_id', $denuncia->area_id)
             ->where('activo', true)
-            ->whereHas('roles', fn($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
+            ->whereHas('roles', fn ($q) => $q->whereIn('nombre', ['funcionario', 'supervisor']))
             ->get(['id', 'nombre', 'apellido']);
 
         return Inertia::render('Funcionario/Denuncias/Show', [
@@ -193,7 +193,7 @@ class FuncionarioController extends Controller
             $denuncia->cambiarEstado($nuevoEstado, $request->user(), $validated['motivo'] ?? null);
 
             // Agregar comentario interno si existe
-            if (!empty($validated['comentario_interno'])) {
+            if (! empty($validated['comentario_interno'])) {
                 $denuncia->comentarios()->create([
                     'usuario_id' => $request->user()->id,
                     'contenido' => $validated['comentario_interno'],
@@ -261,7 +261,7 @@ class FuncionarioController extends Controller
         ]);
 
         // Si el comentario es público, notificar al ciudadano
-        if (!$comentario->es_interno) {
+        if (! $comentario->es_interno) {
             $this->notificarNuevoComentario($denuncia, $comentario);
         }
 
