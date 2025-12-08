@@ -14,11 +14,11 @@ class Usuario extends Authenticatable
 
     protected $table = 'usuarios';
 
-    const CREATED_AT = 'creado_en';
-
-    const UPDATED_AT = 'actualizado_en';
-
-    const DELETED_AT = 'eliminado_en';
+    // CORRECCIÓN: Usar convenciones estándar de Laravel
+    // Ya no necesitamos estas constantes:
+    // const CREATED_AT = 'creado_en';
+    // const UPDATED_AT = 'actualizado_en';
+    // const DELETED_AT = 'eliminado_en';
 
     protected $fillable = [
         'nombre',
@@ -28,12 +28,12 @@ class Usuario extends Authenticatable
         'telefono',
         'direccion',
         'area_id',
-        'password_hash',
+        'password', // CORRECCIÓN: Nombre estándar
         'activo',
     ];
 
     protected $hidden = [
-        'password_hash',
+        'password', // CORRECCIÓN: Nombre estándar
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
@@ -42,21 +42,16 @@ class Usuario extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verificado_en' => 'datetime',
+            'email_verified_at' => 'datetime', // CORRECCIÓN: Nombre estándar
             'two_factor_confirmed_at' => 'datetime',
             'bloqueado_hasta' => 'datetime',
             'ultimo_login' => 'datetime',
             'activo' => 'boolean',
-            'creado_en' => 'datetime',
-            'actualizado_en' => 'datetime',
+            'password' => 'hashed', // Laravel 11+ automatic hashing
         ];
     }
 
-    // Laravel usa 'password' internamente, mapeamos a password_hash
-    public function getAuthPassword()
-    {
-        return $this->password_hash;
-    }
+    // CORRECCIÓN: Ya no necesitamos getAuthPassword() porque usamos 'password'
 
     // Relaciones
     public function area()
@@ -95,7 +90,7 @@ class Usuario extends Authenticatable
         return $this->hasMany(Notificacion::class, 'usuario_id');
     }
 
-    // Helpers
+    // Helpers de autorización
     public function tieneRol(string $nombreRol): bool
     {
         return $this->roles()->where('nombre', $nombreRol)->exists();
@@ -103,6 +98,11 @@ class Usuario extends Authenticatable
 
     public function tienePermiso(string $nombrePermiso): bool
     {
+        // Admins tienen todos los permisos
+        if ($this->esAdmin()) {
+            return true;
+        }
+
         // Verificar permiso directo
         if ($this->permisos()->where('nombre', $nombrePermiso)->exists()) {
             return true;
@@ -131,5 +131,39 @@ class Usuario extends Authenticatable
     public function getNombreCompletoAttribute(): string
     {
         return trim($this->nombre.' '.$this->apellido);
+    }
+
+    // Helper para bloquear usuario
+    public function bloquear(int $minutos = 15): void
+    {
+        $this->update([
+            'bloqueado_hasta' => now()->addMinutes($minutos),
+        ]);
+    }
+
+    // Helper para verificar si está bloqueado
+    public function estaBloqueado(): bool
+    {
+        return $this->bloqueado_hasta && $this->bloqueado_hasta->isFuture();
+    }
+
+    // Helper para incrementar intentos fallidos
+    public function incrementarIntentosFallidos(): void
+    {
+        $this->increment('intentos_fallidos');
+
+        if ($this->intentos_fallidos >= 5) {
+            $this->bloquear(15);
+        }
+    }
+
+    // Helper para resetear intentos
+    public function resetearIntentosFallidos(): void
+    {
+        $this->update([
+            'intentos_fallidos' => 0,
+            'bloqueado_hasta' => null,
+            'ultimo_login' => now(),
+        ]);
     }
 }

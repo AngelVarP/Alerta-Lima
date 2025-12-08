@@ -20,6 +20,22 @@ class FuncionarioController extends Controller
     {
         $usuario = $request->user();
 
+        // Verificar que el funcionario tenga un área asignada
+        if (! $usuario->area_id) {
+            return Inertia::render('Funcionario/Dashboard', [
+                'error' => 'No tienes un área asignada. Contacta al administrador para que te asigne a un área.',
+                'stats' => [
+                    'total' => 0,
+                    'asignadas_a_mi' => 0,
+                    'en_proceso' => 0,
+                    'sla_vencido' => 0,
+                ],
+                'denunciasRecientes' => [],
+                'denunciasSlaPendiente' => [],
+                'porEstado' => [],
+            ]);
+        }
+
         // Estadísticas del área
         $stats = [
             'total' => Denuncia::where('area_id', $usuario->area_id)->count(),
@@ -67,6 +83,19 @@ class FuncionarioController extends Controller
     public function index(Request $request)
     {
         $usuario = $request->user();
+
+        // Verificar que el funcionario tenga un área asignada
+        if (! $usuario->area_id) {
+            return Inertia::render('Funcionario/Denuncias/Index', [
+                'error' => 'No tienes un área asignada. Contacta al administrador.',
+                'denuncias' => collect([]),
+                'filtros' => [],
+                'estados' => [],
+                'categorias' => [],
+                'prioridades' => [],
+                'funcionarios' => [],
+            ]);
+        }
 
         $query = Denuncia::where('area_id', $usuario->area_id)
             ->with(['ciudadano', 'estado', 'categoria', 'prioridad', 'distrito', 'asignadoA']);

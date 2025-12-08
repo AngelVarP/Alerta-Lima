@@ -140,7 +140,7 @@ Route::middleware('auth')->group(function () {
         $roles = \Illuminate\Support\Facades\DB::table('rol_usuario')
             ->join('roles', 'rol_usuario.rol_id', '=', 'roles.id')
             ->where('rol_usuario.usuario_id', $user->id)
-            ->select('roles.id', 'roles.nombre', 'roles.codigo')
+            ->select('roles.id', 'roles.nombre')
             ->get();
 
         return response()->json([
@@ -149,6 +149,7 @@ Route::middleware('auth')->group(function () {
                 'nombre' => $user->nombre,
                 'apellido' => $user->apellido,
                 'email' => $user->email,
+                'area_id' => $user->area_id,
             ],
             'roles' => $roles,
             'tieneRol_ciudadano' => $user->tieneRol('ciudadano'),
@@ -157,6 +158,10 @@ Route::middleware('auth')->group(function () {
             'tieneRol_admin' => $user->tieneRol('admin'),
             'esAdmin' => $user->esAdmin(),
             'esFuncionario' => $user->esFuncionario(),
+            'area' => $user->area ? [
+                'id' => $user->area->id,
+                'nombre' => $user->area->nombre,
+            ] : null,
         ]);
     })->name('debug.user');
 });
